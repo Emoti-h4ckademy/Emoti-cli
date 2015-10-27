@@ -2,14 +2,18 @@ import QtQuick 2.4
 import QtQuick.Controls 1.2
 
 Rectangle {
+    x: 0
     width: 196
-    height: 370
+    height: 330
 
     Image {
         id: image1
-        x: 0
-        y: 0
-        source: "logo_square.png"
+        x: 4
+        y: 85
+        width: 188
+        height: 190
+        fillMode: Image.PreserveAspectFit
+        source: "emoti-logo-small.png"
     }
 
     ListModel {
@@ -26,6 +30,17 @@ Rectangle {
             name: "Sam Wise"
             number: "555 0473"
         }
+    }
+
+    Text {
+        id: text1
+        x: 12
+        y: 24
+        width: 172
+        height: 42
+        color: "#767676"
+        text: qsTr("Welcome to Emoti!")
+        font.pixelSize: 20
     }
 
 

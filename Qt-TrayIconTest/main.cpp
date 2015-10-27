@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 
         QSystemTrayIcon *trayIcon = new QSystemTrayIcon(root);
         trayIcon->setContextMenu(trayIconMenu);
-        trayIcon->setIcon(QIcon(":/logo_square.png"));
+        trayIcon->setIcon(QIcon(":/emoti-icon.png"));
         trayIcon->show();
     }
 
