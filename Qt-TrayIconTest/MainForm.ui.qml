@@ -1,31 +1,33 @@
 import QtQuick 2.4
-import QtQuick.Controls 1.3
-import QtQuick.Layouts 1.1
+import QtQuick.Controls 1.2
 
-Item {
-    width: 640
-    height: 480
+Rectangle {
+    width: 196
+    height: 370
 
-    property alias button3: button3
-    property alias button2: button2
-    property alias button1: button1
+    Image {
+        id: image1
+        x: 0
+        y: 0
+        source: "logo_square.png"
+    }
 
-    RowLayout {
-        anchors.centerIn: parent
-
-        Button {
-            id: button1
-            text: qsTr("Press Me 1")
+    ListModel {
+        id: lmodel
+        ListElement {
+            name: "Bill Smith"
+            number: "555 3264"
         }
-
-        Button {
-            id: button2
-            text: qsTr("Press Me 2")
+        ListElement {
+            name: "John Brown"
+            number: "555 8426"
         }
-
-        Button {
-            id: button3
-            text: qsTr("Press Me 3")
+        ListElement {
+            name: "Sam Wise"
+            number: "555 0473"
         }
     }
+
+
 }
+
