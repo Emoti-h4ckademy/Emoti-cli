@@ -5,6 +5,8 @@
 #include <QMenu>
 #include <QSystemTrayIcon>
 
+#include <memory>
+
 QQmlApplicationEngine* loadTrayResources()
 {
     if (!QSystemTrayIcon::isSystemTrayAvailable())
@@ -22,29 +24,35 @@ QQmlApplicationEngine* loadTrayResources()
 }
 
 
-int loadTray(QMenu *_trayIconMenu, QSystemTrayIcon *_trayIcon, QQmlApplicationEngine *engine)
+int loadTray(QSystemTrayIcon *_trayIcon, QQmlApplicationEngine *engine)
 {
 
     QObject *root = engine->rootObjects().at(0);
 
-    QAction *minimizeAction = new QAction(QObject::tr("Mi&nimize"), root);
-    root->connect(minimizeAction, SIGNAL(triggered()), root, SLOT(hide()));
-    QAction *maximizeAction = new QAction(QObject::tr("Ma&ximize"), root);
-    root->connect(maximizeAction, SIGNAL(triggered()), root, SLOT(showMaximized()));
+//    QAction *minimizeAction = new QAction(QObject::tr("Mi&nimize"), root);
+//    root->connect(minimizeAction, SIGNAL(triggered()), root, SLOT(hide()));
+
+//    QAction *maximizeAction = new QAction(QObject::tr("Ma&ximize"), root);
+//    root->connect(maximizeAction, SIGNAL(triggered()), root, SLOT(showMaximized()));
+
     QAction *restoreAction = new QAction(QObject::tr("&Restore"), root);
     root->connect(restoreAction, SIGNAL(triggered()), root, SLOT(showNormal()));
+
     QAction *quitAction = new QAction(QObject::tr("&Quit"), root);
     root->connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
 
-    _trayIconMenu = new QMenu();
-    _trayIconMenu->addAction(minimizeAction);
-    _trayIconMenu->addAction(maximizeAction);
-    _trayIconMenu->addAction(restoreAction);
-    _trayIconMenu->addSeparator();
-    _trayIconMenu->addAction(quitAction);
 
-    _trayIcon = new QSystemTrayIcon(root);
-    _trayIcon->setContextMenu(_trayIconMenu);
+//    _trayIcon->contextMenu()->addAction(minimizeAction);
+//    _trayIcon->contextMenu()->addAction(maximizeAction);
+
+
+    _trayIcon->contextMenu()->addAction(restoreAction);
+    _trayIcon->contextMenu()->addAction(quitAction);
+//    _trayIconMenu->addAction(restoreAction);
+//    _trayIconMenu->addAction(quitAction);
+
+
+    _trayIcon->setParent(root);
     _trayIcon->setIcon(QIcon(":/resources/emoti-icon.png"));
     _trayIcon->show();
 
@@ -57,7 +65,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     QApplication::setQuitOnLastWindowClosed(false);
 
-    QQmlApplicationEngine *engine = loadTrayResources();
+    std::shared_ptr<QQmlApplicationEngine> engine (loadTrayResources());
     if (engine == nullptr)
     {
         return 1;
@@ -70,10 +78,11 @@ int main(int argc, char *argv[])
     }
 
 
-    QMenu *trayIconMenu = nullptr;
-    QSystemTrayIcon *trayIcon = nullptr;
+    std::shared_ptr<QMenu> trayIconMenu (new QMenu());
+    std::shared_ptr<QSystemTrayIcon> trayIcon (new QSystemTrayIcon());
+    trayIcon.get()->setContextMenu(trayIconMenu.get());
 
-    if (loadTray(trayIconMenu,trayIcon, engine) != 0)
+    if (loadTray(trayIcon.get(), engine.get()) != 0)
     {
         return 1;
     }
