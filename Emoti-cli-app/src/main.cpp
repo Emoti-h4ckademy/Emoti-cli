@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     QApplication::setQuitOnLastWindowClosed(false);
 
     QQmlApplicationEngine engine;
-    engine.load(QUrl(QStringLiteral("qrc:///main.qml")));
+    engine.load(QUrl(QStringLiteral("qrc:///resources/main.qml")));
 
     QObject *root = 0;
     if (engine.rootObjects().size() > 0)
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 
         QSystemTrayIcon *trayIcon = new QSystemTrayIcon(root);
         trayIcon->setContextMenu(trayIconMenu);
-        trayIcon->setIcon(QIcon(":/emoti-icon.png"));
+        trayIcon->setIcon(QIcon(":/resources/emoti-icon.png"));
         trayIcon->show();
     }
 

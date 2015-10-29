@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/">
+    <qresource prefix="/resources">
         <file>main.qml</file>
         <file>MainForm.ui.qml</file>
         <file>emoti-icon.png</file>
