@@ -6,6 +6,7 @@
 #include <QSystemTrayIcon>
 
 #include <memory>
+#include "camera.h"
 
 QQmlApplicationEngine* loadTrayResources()
 {
@@ -87,5 +88,12 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    return app.exec();
+
+    Camera cam;
+    cam.initCamera(0);
+
+    std::shared_ptr<cv::Mat> frame = cam.getImage();
+
+    app.exec();
+
 }
