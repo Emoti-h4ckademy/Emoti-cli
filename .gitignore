@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-
-build-Qt-TrayIconTest-Desktop_Qt_5_4_1_clang_64bit-Debug/
-=======
 # C++ objects and libs
 
 *.slo
@@ -36,4 +32,3 @@ Makefile*
 #QtCtreator Qml
 *.qmlproject.user
 *.qmlproject.user.*
->>>>>>> d525086eac04f7716d0e8d5ff0db70d8955e95d6
