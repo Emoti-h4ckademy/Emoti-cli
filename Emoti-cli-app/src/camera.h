@@ -4,6 +4,16 @@
 #include <opencv2/opencv.hpp>
 #include <memory>
 
+
+struct mem_encode
+{
+  char* buffer = NULL;
+  size_t size = 0;
+  size_t allocd = 0;
+};
+
+std::shared_ptr<struct mem_encode*> mat2png(cv::Mat &_img);
+
 class Camera
 {
 public:

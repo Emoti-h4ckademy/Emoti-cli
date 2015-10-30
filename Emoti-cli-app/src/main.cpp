@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 
     if (engine->rootObjects().size() == 0)
     {
-        QObject::tr("Could not load resources");
+        fprintf(stderr, "Could not load resources");
         return 1;
     }
 
@@ -93,6 +93,8 @@ int main(int argc, char *argv[])
     cam.initCamera(0);
 
     std::shared_ptr<cv::Mat> frame = cam.getImage();
+    std::shared_ptr<struct mem_encode*> test;
+    test = mat2png(*frame.get());
 
 
     app.exec();
