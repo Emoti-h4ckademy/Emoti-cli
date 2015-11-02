@@ -4,15 +4,29 @@
 #include <opencv2/opencv.hpp>
 #include <memory>
 
-
-struct mem_encode
+/**
+ * @brief Class to manage a PNG Image
+ */
+class PngImage
 {
-  char* buffer = NULL;
-  size_t size = 0;
-  size_t allocd = 0;
-};
+public:
+    PngImage();
+    size_t getSize();
+    std::shared_ptr<unsigned char> getData();
 
-std::shared_ptr<struct mem_encode*> mat2png(cv::Mat &_img);
+    /**
+     * @brief appendData Adds data to the back of the image
+     * @param _data
+     * @param _size
+     * @return 1 if memory could not be allocated
+     */
+    int appendData (unsigned char* _data, size_t _size);
+
+private:
+    std::shared_ptr<unsigned char> data;
+    size_t size;
+
+};
 
 class Camera
 {
@@ -20,11 +34,18 @@ public:
     Camera();
 
     bool initCamera (int _device);
-    std::shared_ptr<cv::Mat> getImage();
+    std::shared_ptr<PngImage>  getImage();
 
 private:
     std::shared_ptr<cv::VideoCapture> cam;
 };
+
+/**
+ * @brief mat2png Transform a cvMat into a PngImage
+ * @param _img
+ * @return
+ */
+std::shared_ptr<PngImage> mat2png(cv::Mat* _img);
 
 
 #endif // CAMERA_H

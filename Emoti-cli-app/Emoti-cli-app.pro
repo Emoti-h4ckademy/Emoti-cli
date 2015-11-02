@@ -2,7 +2,7 @@ TEMPLATE = app
 
 QT += qml quick widgets
 QMAKE_CXXFLAGS += -Wall -Wextra -std=c++11
-LIBS += $(shell pkg-config --libs opencv libpng)
+LIBS += $(shell pkg-config --libs opencv)
 
 HEADERS += \
     src/camera.h

@@ -5,7 +5,7 @@
 #include <QMenu>
 #include <QSystemTrayIcon>
 
-#include <memory>
+#include <fstream>
 #include "camera.h"
 
 QQmlApplicationEngine* loadTrayResources()
@@ -92,10 +92,21 @@ int main(int argc, char *argv[])
     Camera cam;
     cam.initCamera(0);
 
-    std::shared_ptr<cv::Mat> frame = cam.getImage();
-    std::shared_ptr<struct mem_encode*> test;
-    test = mat2png(*frame.get());
+    std::shared_ptr<PngImage> test = cam.getImage();
+
+
+
+    FILE *fl = fopen("salida.png", "w+");
+    if (fl == NULL){
+        fprintf(stderr,"Couldn't open destiny location\n");
+        return -1;
+    }
+
+    fwrite(test.get()->getData().get(),sizeof(char), test.get()->getSize(),fl);
+
+    fclose(fl);
 
 
     app.exec();
+
 }
