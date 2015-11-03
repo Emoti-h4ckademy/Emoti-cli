@@ -6,6 +6,8 @@
 #include <QNetworkReply>
 #include <QUrl>
 #include <QUrlQuery>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 Network::Network(QString _serverUrl)
     :serverUrl(_serverUrl)
@@ -22,18 +24,34 @@ bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QSt
     QObject::connect(&mgr, SIGNAL(finished(QNetworkReply*)), &eventLoop, SLOT(quit()));
 
     // the HTTP request
-    QUrlQuery postData;
-    postData.addQueryItem("Username", _username);
-    postData.addQueryItem("Time", _time);
-   //postData.addQueryItem("PNG", _image->getData().get());
+    QJsonObject json;
+    json["Time"] = _time;
+    json.insert("Username", _username);
+    json.insert("Time",_time);
+
+    QByteArray bimg (reinterpret_cast<const char*> (_image->getData().get()), _image->getSize());
+    QString baseimg = bimg.toBase64();
+    json.insert("Image", baseimg);
+
+    QJsonDocument jsonDoc;
+    jsonDoc.setObject(json);
+
+
+//    QUrlQuery postData;
+
+//    postData.addQueryItem("Username", _username);
+//    postData.addQueryItem("Time", _time);
+//   //postData.addQueryItem("PNG", _image->getData().get());
+
 
     QNetworkRequest req(QUrl(this->serverUrl));
-    req.setHeader(QNetworkRequest::ContentTypeHeader,
-                 "application/x-www-form-urlencoded");
 
-    qDebug() << "Network::sendImage POST DATA TO " << this->serverUrl << "------- " << postData.toString(QUrl::FullyEncoded).toUtf8();
+    req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-    QNetworkReply *reply = mgr.post(req, postData.toString(QUrl::FullyEncoded).toUtf8());
+
+    qDebug() << "Network::sendImage POST DATA TO " << this->serverUrl << "------- " << jsonDoc.toJson();// << json;
+
+    QNetworkReply *reply = mgr.post(req, jsonDoc.toJson());
 
 
     eventLoop.exec(); // blocks stack until "finished()" has been called
