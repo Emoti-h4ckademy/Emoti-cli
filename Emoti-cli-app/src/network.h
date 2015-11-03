@@ -4,6 +4,7 @@
 #include "camera.h"
 #include <QString>
 
+
 class Network
 {
 public:
@@ -13,6 +14,7 @@ public:
 
 private:
     QString serverUrl;
+
 };
 
 #endif // NETWORK_H

@@ -1,6 +1,5 @@
 #include "camera.h"
-#include <stdio.h>
-
+#include <QDebug>
 
 PngImage::PngImage()
     :data(nullptr), size(0)
@@ -25,7 +24,7 @@ int PngImage::appendData(unsigned char *_data, size_t _size)
     {
         //Create space
         unsigned char *np = static_cast<unsigned char*> (malloc (_size * sizeof(unsigned char)));
-        if (!np) return 1;
+        if (!np) goto failure;
 
         memcpy(np, _data, _size);
 
@@ -35,7 +34,7 @@ int PngImage::appendData(unsigned char *_data, size_t _size)
 
         //Embiggen space
         unsigned char *np = static_cast<unsigned char*> (malloc (nsize * sizeof(unsigned char)));
-        if (!np) return 1;
+        if (!np) goto failure;
 
         memcpy(np, this->data.get(), this->size);
         memcpy(&np[this->size],_data, _size);
@@ -47,6 +46,9 @@ int PngImage::appendData(unsigned char *_data, size_t _size)
 
     return 0;
 
+  failure:
+    qDebug() << "PngImage::appendData - Could not allocate memory";
+    return 1;
 }
 
 Camera::Camera()
@@ -59,7 +61,7 @@ bool Camera::initCamera(int _device)
     bool check = this->cam->open(_device);
 
     if (!check)
-        fprintf(stderr, "Could not open device %d\n",_device);
+        qDebug() << "Camera::initCamera - Device " << _device << " could not be open";
 
     return check;
 }
@@ -68,7 +70,7 @@ std::shared_ptr<PngImage> Camera::getImage()
 {
     if (!this->cam->isOpened())
     {
-        fprintf(stderr, "Camera is not accesible");
+        qDebug() << "Camera::getImage - Device is not open";
         return nullptr;
     }
 
@@ -86,7 +88,7 @@ std::shared_ptr<PngImage> mat2png(cv::Mat* _img)
 
     if (_img == nullptr)
     {
-        fprintf(stderr, "Could not read image;");
+        qDebug() << "Cmat2png: Empty image";
         return std::make_shared<PngImage> (output);
     }
 

@@ -10,7 +10,6 @@
 Network::Network(QString _serverUrl)
     :serverUrl(_serverUrl)
 {
-
 }
 
 bool Network::sendImage(std::shared_ptr<PngImage> _image)
@@ -37,5 +36,6 @@ bool Network::sendImage(std::shared_ptr<PngImage> _image)
         qDebug() << "Failure" <<reply->errorString();
         delete reply;
     }
-}
 
+    return true;
+}
