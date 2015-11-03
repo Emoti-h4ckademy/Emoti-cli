@@ -1,13 +1,17 @@
 TEMPLATE = app
 
-QT += qml quick widgets
+QT += qml quick widgets network
 QMAKE_CXXFLAGS += -Wall -Wextra -std=c++11
-LIBS += $(shell pkg-config --libs opencv)
+
+CONFIG += link_pkgconfig
+PKGCONFIG += opencv
 
 HEADERS += \
-    src/camera.h
+    src/camera.h \
+    src/network.h
 SOURCES += src/main.cpp \
-    src/camera.cpp
+    src/camera.cpp \
+    src/network.cpp
 
 RESOURCES += resources/qml.qrc
 

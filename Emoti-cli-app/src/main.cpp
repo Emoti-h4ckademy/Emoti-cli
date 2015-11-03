@@ -7,6 +7,7 @@
 
 #include <fstream>
 #include "camera.h"
+#include "network.h"
 
 QQmlApplicationEngine* loadTrayResources()
 {
@@ -67,12 +68,7 @@ int main(int argc, char *argv[])
     QApplication::setQuitOnLastWindowClosed(false);
 
     std::shared_ptr<QQmlApplicationEngine> engine (loadTrayResources());
-    if (engine == nullptr)
-    {
-        return 1;
-    }
-
-    if (engine->rootObjects().size() == 0)
+    if ((engine == nullptr) || (engine->rootObjects().size() == 0))
     {
         fprintf(stderr, "Could not load resources");
         return 1;
@@ -94,17 +90,20 @@ int main(int argc, char *argv[])
 
     std::shared_ptr<PngImage> test = cam.getImage();
 
+    Network net("http://10.102.83.80:8080/page1");
+    net.sendImage(test);
 
 
-    FILE *fl = fopen("salida.png", "w+");
-    if (fl == NULL){
-        fprintf(stderr,"Couldn't open destiny location\n");
-        return -1;
-    }
 
-    fwrite(test.get()->getData().get(),sizeof(char), test.get()->getSize(),fl);
+//    FILE *fl = fopen("salida.png", "w+");
+//    if (fl == NULL){
+//        fprintf(stderr,"Couldn't open destiny location\n");
+//        return -1;
+//    }
 
-    fclose(fl);
+//    fwrite(test.get()->getData().get(),sizeof(char), test.get()->getSize(),fl);
+
+//    fclose(fl);
 
 
     app.exec();
