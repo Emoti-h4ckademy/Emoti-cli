@@ -5,7 +5,9 @@
 #include <QMenu>
 #include <QSystemTrayIcon>
 
-#include <fstream>
+#include <QDebug>
+#include <QTime>
+
 #include "camera.h"
 #include "network.h"
 
@@ -90,8 +92,14 @@ int main(int argc, char *argv[])
 
     std::shared_ptr<PngImage> test = cam.getImage();
 
-    Network net("http://10.102.83.80:8080/page1");
-    net.sendImage(test);
+
+    QString name = qgetenv("USER");
+    if (name.isEmpty())
+        name = qgetenv("USERNAME");
+
+    QDateTime time = QDateTime::currentDateTime();
+    Network net("http://10.102.83.80:8080/imagepost");
+    net.sendImage(test, name, time.toString());
 
 
 

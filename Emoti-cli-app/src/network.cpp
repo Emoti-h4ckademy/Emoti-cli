@@ -12,7 +12,7 @@ Network::Network(QString _serverUrl)
 {
 }
 
-bool Network::sendImage(std::shared_ptr<PngImage> _image)
+bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QString _time)
 {
     // create custom temporary event loop on stack
     QEventLoop eventLoop;
@@ -22,18 +22,28 @@ bool Network::sendImage(std::shared_ptr<PngImage> _image)
     QObject::connect(&mgr, SIGNAL(finished(QNetworkReply*)), &eventLoop, SLOT(quit()));
 
     // the HTTP request
+    QUrlQuery postData;
+    postData.addQueryItem("Username", _username);
+    postData.addQueryItem("Time", _time);
+   //postData.addQueryItem("PNG", _image->getData().get());
+
     QNetworkRequest req(QUrl(this->serverUrl));
-    QNetworkReply *reply = mgr.get(req);
+    req.setHeader(QNetworkRequest::ContentTypeHeader,
+                 "application/x-www-form-urlencoded");
+
+    qDebug() << "Network::sendImage POST DATA TO " << this->serverUrl << "------- " << postData.toString(QUrl::FullyEncoded).toUtf8();
+
+    QNetworkReply *reply = mgr.post(req, postData.toString(QUrl::FullyEncoded).toUtf8());
+
+
     eventLoop.exec(); // blocks stack until "finished()" has been called
 
     if (reply->error() == QNetworkReply::NoError) {
-        //success
-        qDebug() << "Success" <<reply->readAll();
+        qDebug() << "Network::sendImage : Success" <<reply->readAll();
         delete reply;
     }
     else {
-        //failure
-        qDebug() << "Failure" <<reply->errorString();
+        qDebug() << "Network::sendImage : Failure" <<reply->errorString();
         delete reply;
     }
 
