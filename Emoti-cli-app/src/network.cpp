@@ -25,7 +25,6 @@ bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QSt
 
     // the HTTP request
     QJsonObject json;
-    json["Time"] = _time;
     json.insert("Username", _username);
     json.insert("Time",_time);
 
@@ -37,20 +36,11 @@ bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QSt
     jsonDoc.setObject(json);
 
 
-//    QUrlQuery postData;
 
-//    postData.addQueryItem("Username", _username);
-//    postData.addQueryItem("Time", _time);
-//   //postData.addQueryItem("PNG", _image->getData().get());
-
+    qDebug() << "Network::sendImage POST DATA TO " << this->serverUrl << "------- " ;//<< jsonDoc.toJson();// << json;
 
     QNetworkRequest req(QUrl(this->serverUrl));
-
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-
-
-    qDebug() << "Network::sendImage POST DATA TO " << this->serverUrl << "------- " << jsonDoc.toJson();// << json;
-
     QNetworkReply *reply = mgr.post(req, jsonDoc.toJson());
 
 
@@ -63,6 +53,7 @@ bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QSt
     else {
         qDebug() << "Network::sendImage : Failure" <<reply->errorString();
         delete reply;
+        return false;
     }
 
     return true;

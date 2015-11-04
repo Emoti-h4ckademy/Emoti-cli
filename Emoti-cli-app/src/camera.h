@@ -32,6 +32,7 @@ class Camera
 {
 public:
     Camera();
+    ~Camera();
 
     bool initCamera (int _device);
     std::shared_ptr<PngImage>  getImage();

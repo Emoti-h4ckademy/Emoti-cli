@@ -56,6 +56,11 @@ Camera::Camera()
 {
 }
 
+Camera::~Camera()
+{
+    if (this->cam->isOpened()) this->cam->release();
+}
+
 bool Camera::initCamera(int _device)
 {
     bool check = this->cam->open(_device);
