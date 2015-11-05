@@ -6,10 +6,12 @@
 #include <QSystemTrayIcon>
 
 #include <QDebug>
-#include <QTime>
 
 #include "camera.h"
 #include "network.h"
+
+//#include <thread>
+//#include <chrono>
 
 QQmlApplicationEngine* loadTrayResources()
 {
@@ -66,41 +68,41 @@ int loadTray(QSystemTrayIcon *_trayIcon, QQmlApplicationEngine *engine)
 
 int main(int argc, char *argv[])
 {
-//    QApplication app(argc, argv);
-//    QApplication::setQuitOnLastWindowClosed(false);
+    QApplication app(argc, argv);
+    QApplication::setQuitOnLastWindowClosed(false);
 
-//    std::shared_ptr<QQmlApplicationEngine> engine (loadTrayResources());
-//    if ((engine == nullptr) || (engine->rootObjects().size() == 0))
-//    {
-//        fprintf(stderr, "Could not load resources");
-//        return 1;
-//    }
-
-
-//    std::shared_ptr<QMenu> trayIconMenu (new QMenu());
-//    std::shared_ptr<QSystemTrayIcon> trayIcon (new QSystemTrayIcon());
-//    trayIcon.get()->setContextMenu(trayIconMenu.get());
-
-//    if (loadTray(trayIcon.get(), engine.get()) != 0)
-//    {
-//        return 1;
-//    }
+    std::shared_ptr<QQmlApplicationEngine> engine (loadTrayResources());
+    if ((engine == nullptr) || (engine->rootObjects().size() == 0))
+    {
+        fprintf(stderr, "Could not load resources");
+        return 1;
+    }
 
 
-    Camera cam;
-    cam.initCamera(0);
+    std::shared_ptr<QMenu> trayIconMenu (new QMenu());
+    std::shared_ptr<QSystemTrayIcon> trayIcon (new QSystemTrayIcon());
+    trayIcon.get()->setContextMenu(trayIconMenu.get());
 
-    std::shared_ptr<PngImage> test = cam.getImage();
-
-    QString name = qgetenv("USER");
-    if (name.isEmpty())
-        name = qgetenv("USERNAME");
-
-    QDateTime time = QDateTime::currentDateTime();
-    Network net("http://10.102.83.80:8080/imagepost");
+    if (loadTray(trayIcon.get(), engine.get()) != 0)
+    {
+        return 1;
+    }
 
 
-    net.sendImage(test, name, time.toString());
+//    Camera cam;
+//    cam.initCamera(0);
+
+//    std::shared_ptr<CamImage> test = cam.getImage();
+
+//    QString name = qgetenv("USER");
+//    if (name.isEmpty())
+//        name = qgetenv("USERNAME");
+
+//    QDateTime time = QDateTime::currentDateTime();
+//    Network net("http://10.102.83.80:8080/imagepost");
+
+
+//    net.sendImage(test, name, time.toString());
 
 
 
@@ -116,5 +118,19 @@ int main(int argc, char *argv[])
 
 
 //    app.exec();
+
+    Camera cam;
+
+    for(QCameraInfo &cameraInfo : QCameraInfo::availableCameras()) {
+        cam.setup(cameraInfo); break;
+    }
+
+    //cam.start(QCameraInfo::defaultCamera());
+
+
+//    std::this_thread::sleep_for (std::chrono::seconds(10));
+    auto img = cam.captureImageSync();
+
+    app.exec();
 
 }

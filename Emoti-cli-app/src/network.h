@@ -10,7 +10,7 @@ class Network
 public:
     Network(QString _serverUrl);
 
-    bool sendImage(std::shared_ptr<PngImage> _image, QString _username, QString _time);
+    bool sendImage(std::shared_ptr<CamImage> _image, QString _username, QString _time);
 
 private:
     QString serverUrl;

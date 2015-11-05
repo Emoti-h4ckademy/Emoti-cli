@@ -14,7 +14,7 @@ Network::Network(QString _serverUrl)
 {
 }
 
-bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QString _time)
+bool Network::sendImage(std::shared_ptr<CamImage> _image, QString _username, QString _time)
 {
     // create custom temporary event loop on stack
     QEventLoop eventLoop;
@@ -34,8 +34,6 @@ bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QSt
 
     QJsonDocument jsonDoc;
     jsonDoc.setObject(json);
-
-
 
     qDebug() << "Network::sendImage POST DATA TO " << this->serverUrl << "------- " ;//<< jsonDoc.toJson();// << json;
 
