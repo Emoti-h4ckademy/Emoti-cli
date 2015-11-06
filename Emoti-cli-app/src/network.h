@@ -1,7 +1,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include "camera.h"
+#include "camimage.h"
 #include <QString>
 
 

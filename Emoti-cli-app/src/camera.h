@@ -6,30 +6,8 @@
 #include <QCameraImageCapture>
 #include <QCameraInfo>
 
-/**
- * @brief Class to manage an image from the camera
- */
-class CamImage
-{
-public:
-    CamImage();
-    size_t getSize();
-    std::shared_ptr<unsigned char> getData();
+#include "camimage.h"
 
-    /**
-     * @brief appendData Adds data to the back of the image
-     * @param _data
-     * @param _size
-     * @return 0 if OK, 1 if memory could not be allocated
-     * Logs with qDebug
-     */
-    int appendData (unsigned char* _data, size_t _size);
-
-private:
-    std::shared_ptr<unsigned char> data;
-    size_t size;
-
-};
 
 /**
  * @brief Class to handle the camera
@@ -74,12 +52,14 @@ public:
      */
     std::shared_ptr<CamImage> captureImageSync();
 
+    int start(bool _firstTime);
+    int stop(bool _forceStop);
+
 
 private:
     std::shared_ptr<QCamera> cam;
     QCameraImageCapture *camImageCapture;
     lockStatus deviceLocked;
-    QString deviceCurrent;
 
     /**
      * @brief startSync Starts the camera.

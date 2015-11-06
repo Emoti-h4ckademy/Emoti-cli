@@ -129,7 +129,8 @@ int main(int argc, char *argv[])
 
 
 //    std::this_thread::sleep_for (std::chrono::seconds(10));
-    auto img = cam.captureImageSync();
+    for (int i = 0; i < 10; i++)
+        auto img = cam.captureImageSync();
 
     app.exec();
 

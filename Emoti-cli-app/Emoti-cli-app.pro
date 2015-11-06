@@ -6,10 +6,12 @@ CONFIG += c++11
 
 HEADERS += \
     src/camera.h \
-    src/network.h
+    src/network.h \
+    src/camimage.h
 SOURCES += src/main.cpp \
     src/camera.cpp \
-    src/network.cpp
+    src/network.cpp \
+    src/camimage.cpp
 
 RESOURCES += resources/qml.qrc
 
