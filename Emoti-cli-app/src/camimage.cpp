@@ -1,6 +1,8 @@
 #include "camimage.h"
 
 #include <QDebug>
+#include <QBuffer>
+#include <QPixmap>
 
 CamImage::CamImage()
     :data(nullptr), size(0)
@@ -50,3 +52,53 @@ int CamImage::appendData(unsigned char *_data, size_t _size)
     return 1;
 }
 
+std::shared_ptr<CamImage> qImage2CamImage (QImage &_src, const char *_format)
+{
+    QByteArray byteArray;
+    QBuffer bufferAux(&byteArray);
+    _src.save(&bufferAux, _format);
+
+    CamImage camAux;
+    camAux.appendData(reinterpret_cast<unsigned char*> (byteArray.data()), byteArray.size());
+
+    return std::make_shared<CamImage> (camAux);
+}
+
+
+std::shared_ptr<CamImage> qVideoFrameJPEG2CamImage (QVideoFrame &_src, const char *_format)
+{
+    QImage qImageAux;
+    QPixmap pix;
+    pix.loadFromData(_src.bits(), _src.mappedBytes(), "JPG");
+    qImageAux = pix.toImage();
+
+    return qImage2CamImage(qImageAux, _format);
+}
+
+std::shared_ptr<CamImage> qVideoFrame2CamImage (QVideoFrame &_src, const char *_format)
+{
+    std::shared_ptr<CamImage> output;
+
+    //MAP frame into memory
+    if (! _src.map(QAbstractVideoBuffer::ReadOnly))
+    {
+        qDebug() << Q_FUNC_INFO << "Could not map the VideoFrame";
+        return nullptr;
+    }
+
+    if (_src.pixelFormat() == QVideoFrame::Format_Jpeg)
+    {
+        output =  qVideoFrameJPEG2CamImage(_src, _format);
+    }
+    else
+    {
+        QImage::Format imgFormat = QVideoFrame::imageFormatFromPixelFormat(_src.pixelFormat());
+        QImage qImageAux = QImage(_src.bits(), _src.width(), _src.height(), imgFormat);
+        output = qImage2CamImage (qImageAux, _format);
+    }
+
+    //UNMAP frame into memory
+    _src.unmap();
+
+    return output;
+}

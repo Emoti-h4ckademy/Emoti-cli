@@ -47,10 +47,11 @@ public:
     /**
      * @brief captureImageSync Captures an image synchronously
      * (waits until the image is ready or until it finds an error to return)
+     * @param _format - Format of the image to be returned
      * @return Shared_ptr to the image captured. Nullptr if it wasn't possible to capture it.
      * Logs with qDebug
      */
-    std::shared_ptr<CamImage> captureImageSync();
+    std::shared_ptr<CamImage> captureImageSync(const char* _format = "PNG");
 
     int start(bool _firstTime);
     int stop(bool _forceStop);
@@ -69,13 +70,6 @@ private:
      */
     bool startSync();
 };
-
-/**
- * @brief mat2png Transform a cvMat into a PngImage
- * @param _img
- * @return
- */
-//std::shared_ptr<CamImage> mat2png(cv::Mat* _img);
 
 
 #endif // CAMERA_H

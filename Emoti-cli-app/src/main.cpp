@@ -69,24 +69,24 @@ int loadTray(QSystemTrayIcon *_trayIcon, QQmlApplicationEngine *engine)
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
-    QApplication::setQuitOnLastWindowClosed(false);
+//    QApplication::setQuitOnLastWindowClosed(false);
 
-    std::shared_ptr<QQmlApplicationEngine> engine (loadTrayResources());
-    if ((engine == nullptr) || (engine->rootObjects().size() == 0))
-    {
-        fprintf(stderr, "Could not load resources");
-        return 1;
-    }
+//    std::shared_ptr<QQmlApplicationEngine> engine (loadTrayResources());
+//    if ((engine == nullptr) || (engine->rootObjects().size() == 0))
+//    {
+//        fprintf(stderr, "Could not load resources");
+//        return 1;
+//    }
 
 
-    std::shared_ptr<QMenu> trayIconMenu (new QMenu());
-    std::shared_ptr<QSystemTrayIcon> trayIcon (new QSystemTrayIcon());
-    trayIcon.get()->setContextMenu(trayIconMenu.get());
+//    std::shared_ptr<QMenu> trayIconMenu (new QMenu());
+//    std::shared_ptr<QSystemTrayIcon> trayIcon (new QSystemTrayIcon());
+//    trayIcon.get()->setContextMenu(trayIconMenu.get());
 
-    if (loadTray(trayIcon.get(), engine.get()) != 0)
-    {
-        return 1;
-    }
+//    if (loadTray(trayIcon.get(), engine.get()) != 0)
+//    {
+//        return 1;
+//    }
 
 
 //    Camera cam;
@@ -106,31 +106,29 @@ int main(int argc, char *argv[])
 
 
 
-//    FILE *fl = fopen("salida.png", "w+");
-//    if (fl == NULL){
-//        fprintf(stderr,"Couldn't open destiny location\n");
-//        return -1;
-//    }
-
-//    fwrite(test.get()->getData().get(),sizeof(char), test.get()->getSize(),fl);
-
-//    fclose(fl);
-
-
-//    app.exec();
-
     Camera cam;
 
     for(QCameraInfo &cameraInfo : QCameraInfo::availableCameras()) {
-        cam.setup(cameraInfo); break;
+        cam.setup(cameraInfo);
+        break;
     }
-
-    //cam.start(QCameraInfo::defaultCamera());
 
 
 //    std::this_thread::sleep_for (std::chrono::seconds(10));
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 4; i++)
+    {
         auto img = cam.captureImageSync();
+        FILE *fl = fopen("salida.png", "w+");
+        if (fl == NULL){
+            fprintf(stderr,"Couldn't open destiny location\n");
+            return -1;
+        }
+
+        fwrite(img.get()->getData().get(), sizeof(char), img.get()->getSize(),fl);
+
+        fclose(fl);
+
+    }
 
     app.exec();
 

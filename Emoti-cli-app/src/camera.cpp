@@ -5,7 +5,14 @@
 Camera::Camera()
     :cam(nullptr), camImageCapture(nullptr), deviceLocked(DEVICE_FREE)
 {
+    //Logs state changes
+#if !defined(QT_NO_DEBUG)
+    QObject::connect((this->cam.get()),
+                     &QCamera::statusChanged,
+                     [this]{qDebug() << Q_FUNC_INFO << "State changed" << this->cam->status();});
+#endif
 }
+
 
 Camera::~Camera()
 {
@@ -56,13 +63,6 @@ int Camera::setDevice(QCameraInfo &_device)
     this->cam->setCaptureMode(QCamera::CaptureStillImage);
     this->camImageCapture->setCaptureDestination(QCameraImageCapture::CaptureToBuffer);
 
-    //Logs state changes
-#if !defined(QT_NO_DEBUG)
-    QObject::connect((this->cam.get()),
-                     &QCamera::statusChanged,
-                     [this]{qDebug() << Q_FUNC_INFO << "State changed" << this->cam->status();});
-#endif
-
     return 0;
 
 }
@@ -76,11 +76,11 @@ int Camera::setDeviceMode(Camera::lockStatus _deviceLocked)
     return this->start(true);
 }
 
-std::shared_ptr<CamImage> Camera::captureImageSync()
+std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
 {
     std::shared_ptr<CamImage> capturedImage;
 
-    //Start the camera
+    //Try to start the camera
     if (!this->start(false))
     {
         qDebug() << Q_FUNC_INFO << "Not ready for capture --- Camera state" << this->cam->state();
@@ -102,12 +102,10 @@ std::shared_ptr<CamImage> Camera::captureImageSync()
 
     //Bind the signal imageAvailable again but to a different function to save it
     holder.connect(this->camImageCapture, &QCameraImageCapture::imageAvailable,
-                     [=](int _id, const QVideoFrame &_image) // <<<<<<<<<check [] <<<<<<<<<<<<<
+                     [&capturedImage, &_format](int _id, const QVideoFrame &_image)
     {
         qDebug() << Q_FUNC_INFO << "ImageCaptured" << _id;
-
-        //TODO: SAVE IMAGE HERE <<<<<<<
-        //capturedImage = _image;
+        capturedImage = qVideoFrame2CamImage (const_cast<QVideoFrame&> (_image), _format);
     });
 
 
@@ -129,8 +127,7 @@ std::shared_ptr<CamImage> Camera::captureImageSync()
     //Stop the camera
     this->stop(false);
 
-    //TODO: Return captured image
-    return nullptr;
+    return capturedImage;
 }
 
 int Camera::start(bool _firstTime)
