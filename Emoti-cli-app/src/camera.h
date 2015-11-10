@@ -19,10 +19,10 @@ public:
     ~Camera();
 
     /**
-     * @brief Used to determine wether we use the camera continuously (DEVICE LOCK) or,
+     * @brief Used to determine wether we use the camera continuously (DEVICE LOCKED) or,
      * on other hand, open the camera, take a picture and close id (DEVICE FREE)
      */
-    enum lockStatus {DEVICE_LOCK, DEVICE_FREE};
+    enum lockStatus {DEVICE_LOCKED, DEVICE_FREE};
 
     /**
      * @brief setup Initialize the camera to the required values

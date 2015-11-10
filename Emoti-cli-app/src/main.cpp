@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
     Camera cam;
 
     for(QCameraInfo &cameraInfo : QCameraInfo::availableCameras()) {
-        cam.setup(cameraInfo);
+        cam.setup(cameraInfo, Camera::DEVICE_FREE);
         break;
     }
 
