@@ -53,14 +53,27 @@ public:
      */
     std::shared_ptr<CamImage> captureImageSync(const char* _format = "PNG");
 
-    int start(bool _firstTime);
-    int stop(bool _forceStop);
-
 
 private:
     std::shared_ptr<QCamera> cam;
     QCameraImageCapture *camImageCapture;
     lockStatus deviceLocked;
+
+    /**
+     * @brief start Starts the camera (if needed) to capture images
+     * @param _firstTime Wether this camera has just been initialized
+     * @return 0 if OK, !0 if error.
+     * Logs with qDebug
+     */
+    int start(bool _firstTime);
+
+    /**
+     * @brief stop Stops the camera (if needed) after capturing an image
+     * @param _forceStop Stops the camera no mather the lockStatus it has
+     * @return 0 if OK, !0 if error.
+     * Logs with qDebug
+     */
+    int stop(bool _forceStop);
 
     /**
      * @brief startSync Starts the camera.

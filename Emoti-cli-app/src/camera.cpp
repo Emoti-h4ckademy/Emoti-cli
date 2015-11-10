@@ -51,6 +51,7 @@ int Camera::setDevice(QCameraInfo &_device)
         return 1;
     }
 
+    //Everything is OK, swap the new camera and discard the old one
     this->cam = newCam;
     if (this->camImageCapture) delete camImageCapture;
     this->camImageCapture = newImageCapture;
@@ -75,13 +76,12 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
 {
     std::shared_ptr<CamImage> capturedImage;
 
-    //Try to start the camera
+    //Try to start the camera (if needed)
     if (this->start(false))
     {
         qDebug() << Q_FUNC_INFO << "Not ready for capture --- Camera state" << this->cam->state();
         return nullptr;
     }
-
 
     //Signal capture
     QObject holder;
@@ -120,7 +120,7 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
         capturedImage = nullptr;
     }
 
-    //Stop the camera
+    //Stop the camera if needed
     this->stop(false);
 
     return capturedImage;
@@ -167,9 +167,11 @@ bool Camera::startSync()
         return false;
     }
 
-    qDebug() << Q_FUNC_INFO << "Begin. Camera ready = " << this->camImageCapture->isReadyForCapture();
-
-    if (this->camImageCapture->isReadyForCapture()) return true;
+    if (this->camImageCapture->isReadyForCapture())
+    {
+        qDebug() << Q_FUNC_INFO << "Camera ready. NOTHING IS DONE";
+        return true;
+    }
 
     //Signal capture
     QObject holder;
@@ -183,7 +185,6 @@ bool Camera::startSync()
     //Capture
     this->cam->start();
     eventLoop.exec(); //We wait until the camera has changed stated or an error has been received
-    qDebug() << Q_FUNC_INFO << "Wait. Camera ready = " << this->camImageCapture->isReadyForCapture();
 
     //Disconnect from all signals
     for (auto it : myEvents)
@@ -197,5 +198,6 @@ bool Camera::startSync()
         return false;
     }
 
+    qDebug() << Q_FUNC_INFO << "Exit. Camera ready = " << this->camImageCapture->isReadyForCapture();
     return !this->camImageCapture->isReadyForCapture();
 }

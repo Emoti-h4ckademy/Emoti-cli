@@ -30,11 +30,21 @@ private:
 };
 
 /**
- * @brief qVideoFrame2CamImage - Converts a QVideoFrame into a CamImage
- * @param _src - QVideoFrame source
- * @param _format - Format to be given to the QImage, by default PNG
+ * @brief qImage2CamImage Converts a QImage into a CamImage
+ * @param _src QImage source
+ * @param _format Format to be given to the CamImage, by default PNG
+ * @return shrptr to the image or nullptr
  * Logs with qDebug
- * @return
+ */
+std::shared_ptr<CamImage> qImage2CamImage (QImage &_src, const char* _format = "PNG");
+
+
+/**
+ * @brief qVideoFrame2CamImage Converts a QVideoFrame into a CamImage
+ * @param _src QVideoFrame source
+ * @param _format Format to be given to the CamImage, by default PNG
+ * @return shrptr to the image or nullptr
+ * Logs with qDebug
  */
 std::shared_ptr<CamImage> qVideoFrame2CamImage (QVideoFrame &_src, const char* _format = "PNG");
 
