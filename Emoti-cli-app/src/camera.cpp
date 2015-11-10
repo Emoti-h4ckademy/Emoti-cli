@@ -17,6 +17,7 @@ Camera::~Camera()
 int Camera::setup(QCameraInfo& _device, lockStatus _deviceLocked)
 {
     //setDevice already starts the camera
+    qDebug() << Q_FUNC_INFO << "Setting up device: " << _device.deviceName() << "(" << _device.description() << "), " << (_deviceLocked == DEVICE_LOCKED ? "LOCKED":"FREE");
     return (this->setDevice(_device) || this->setDeviceMode(_deviceLocked));
 }
 
