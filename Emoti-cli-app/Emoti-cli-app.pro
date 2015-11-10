@@ -7,11 +7,13 @@ CONFIG += c++11
 HEADERS += \
     src/camera.h \
     src/network.h \
-    src/camimage.h
+    src/camimage.h \
+    src/mainwindow.h
 SOURCES += src/main.cpp \
     src/camera.cpp \
     src/network.cpp \
-    src/camimage.cpp
+    src/camimage.cpp \
+    src/mainwindow.cpp
 
 RESOURCES += resources/qml.qrc
 
@@ -27,3 +29,6 @@ QML_IMPORT_PATH =
 
 # Default rules for deployment.
 include(resources/deployment.pri)
+
+FORMS += \
+    src/mainwindow.ui
