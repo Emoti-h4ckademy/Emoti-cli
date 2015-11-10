@@ -6,10 +6,13 @@
 #include <QSystemTrayIcon>
 
 #include <QDebug>
-#include <QTime>
 
 #include "camera.h"
 #include "network.h"
+
+#include <thread>
+#include <chrono>
+#include <QDate>
 
 QQmlApplicationEngine* loadTrayResources()
 {
@@ -66,7 +69,7 @@ int loadTray(QSystemTrayIcon *_trayIcon, QQmlApplicationEngine *engine)
 
 int main(int argc, char *argv[])
 {
-//    QApplication app(argc, argv);
+    QApplication app(argc, argv);
 //    QApplication::setQuitOnLastWindowClosed(false);
 
 //    std::shared_ptr<QQmlApplicationEngine> engine (loadTrayResources());
@@ -86,35 +89,32 @@ int main(int argc, char *argv[])
 //        return 1;
 //    }
 
-
     Camera cam;
-    cam.initCamera(0);
 
-    std::shared_ptr<PngImage> test = cam.getImage();
+    for(QCameraInfo &cameraInfo : QCameraInfo::availableCameras()) {
+        cam.setup(cameraInfo, Camera::DEVICE_FREE);
+        break;
+    }
+
 
     QString name = qgetenv("USER");
     if (name.isEmpty())
         name = qgetenv("USERNAME");
 
-    QDateTime time = QDateTime::currentDateTime();
-    Network net("http://10.102.83.80:8080/imagepost");
+
+    for (int i = 0; i < 100; i++)
+    {
+        auto img = cam.captureImageSync("PNG");
 
 
-    net.sendImage(test, name, time.toString());
+        QDateTime time = QDateTime::currentDateTime();
+        Network net("http://10.102.83.80:8080/imagepost");
+        net.sendImage(img, name, time.toString());
 
+        qDebug() << Q_FUNC_INFO << "Sleeping for 10 seconds  <<<<<<<<<<<<<<<<<";
+        std::this_thread::sleep_for (std::chrono::seconds(10));
+    }
 
-
-//    FILE *fl = fopen("salida.png", "w+");
-//    if (fl == NULL){
-//        fprintf(stderr,"Couldn't open destiny location\n");
-//        return -1;
-//    }
-
-//    fwrite(test.get()->getData().get(),sizeof(char), test.get()->getSize(),fl);
-
-//    fclose(fl);
-
-
-//    app.exec();
+    app.exec();
 
 }

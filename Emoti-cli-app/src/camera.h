@@ -1,52 +1,88 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <opencv2/opencv.hpp>
 #include <memory>
+#include <QCamera>
+#include <QCameraImageCapture>
+#include <QCameraInfo>
+
+#include "camimage.h"
+
 
 /**
- * @brief Class to manage a PNG Image
+ * @brief Class to handle the camera
  */
-class PngImage
-{
-public:
-    PngImage();
-    size_t getSize();
-    std::shared_ptr<unsigned char> getData();
-
-    /**
-     * @brief appendData Adds data to the back of the image
-     * @param _data
-     * @param _size
-     * @return 1 if memory could not be allocated
-     */
-    int appendData (unsigned char* _data, size_t _size);
-
-private:
-    std::shared_ptr<unsigned char> data;
-    size_t size;
-
-};
-
 class Camera
 {
 public:
     Camera();
     ~Camera();
 
-    bool initCamera (int _device);
-    std::shared_ptr<PngImage>  getImage();
+    /**
+     * @brief Used to determine wether we use the camera continuously (DEVICE LOCKED) or,
+     * on other hand, open the camera, take a picture and close id (DEVICE FREE)
+     */
+    enum lockStatus {DEVICE_LOCKED, DEVICE_FREE};
+
+    /**
+     * @brief setup Initialize the camera to the required values
+     * @param _device Computers device to use
+     * @param _deviceLocked Check enum lockStatus (use camera always or not)
+     * @return 0 if OK, !0 if errors
+     * Logs with qDebug
+     * In case of errors it keeps the previous state
+     */
+    int setup (QCameraInfo& _device, lockStatus _deviceLocked = DEVICE_FREE);
+
+    /**
+     * @brief changeDevice Changes the used device to capture images
+     * @param _device New device to be used
+     * @return 0 if OK, !0 if error.
+     * Logs with qDebug
+     */
+    int setDevice (QCameraInfo& _device);
+
+    int setDeviceMode (lockStatus _deviceLocked);
+
+    /**
+     * @brief captureImageSync Captures an image synchronously
+     * (waits until the image is ready or until it finds an error to return)
+     * @param _format - Format of the image to be returned
+     * @return Shared_ptr to the image captured. Nullptr if it wasn't possible to capture it.
+     * Logs with qDebug
+     */
+    std::shared_ptr<CamImage> captureImageSync(const char* _format = "PNG");
+
 
 private:
-    std::shared_ptr<cv::VideoCapture> cam;
-};
+    std::shared_ptr<QCamera> cam;
+    QCameraImageCapture *camImageCapture;
+    lockStatus deviceLocked;
 
-/**
- * @brief mat2png Transform a cvMat into a PngImage
- * @param _img
- * @return
- */
-std::shared_ptr<PngImage> mat2png(cv::Mat* _img);
+    /**
+     * @brief start Starts the camera (if needed) to capture images
+     * @param _firstTime Wether this camera has just been initialized
+     * @return 0 if OK, !0 if error.
+     * Logs with qDebug
+     */
+    int start(bool _firstTime);
+
+    /**
+     * @brief stop Stops the camera (if needed) after capturing an image
+     * @param _forceStop Stops the camera no mather the lockStatus it has
+     * @return 0 if OK, !0 if error.
+     * Logs with qDebug
+     */
+    int stop(bool _forceStop);
+
+    /**
+     * @brief startSync Starts the camera.
+     * Wait until either an error is found or capturing is possible.
+     * @return true -> camera ready; false -> error.
+     * Logs with qDebug
+     */
+    bool startSync();
+};
 
 
 #endif // CAMERA_H

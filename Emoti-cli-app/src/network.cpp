@@ -14,14 +14,14 @@ Network::Network(QString _serverUrl)
 {
 }
 
-bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QString _time)
+bool Network::sendImage(std::shared_ptr<CamImage> _image, QString _username, QString _time)
 {
     // create custom temporary event loop on stack
     QEventLoop eventLoop;
 
     // "quit()" the event-loop, when the network request "finished()"
     QNetworkAccessManager mgr;
-    QObject::connect(&mgr, SIGNAL(finished(QNetworkReply*)), &eventLoop, SLOT(quit()));
+    QMetaObject::Connection connection = QObject::connect(&mgr, SIGNAL(finished(QNetworkReply*)), &eventLoop, SLOT(quit()));
 
     // the HTTP request
     QJsonObject json;
@@ -35,8 +35,6 @@ bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QSt
     QJsonDocument jsonDoc;
     jsonDoc.setObject(json);
 
-
-
     qDebug() << "Network::sendImage POST DATA TO " << this->serverUrl << "------- " ;//<< jsonDoc.toJson();// << json;
 
     QNetworkRequest req(QUrl(this->serverUrl));
@@ -45,13 +43,14 @@ bool Network::sendImage(std::shared_ptr<PngImage> _image, QString _username, QSt
 
 
     eventLoop.exec(); // blocks stack until "finished()" has been called
+    eventLoop.disconnect(connection);
 
     if (reply->error() == QNetworkReply::NoError) {
-        qDebug() << "Network::sendImage : Success" <<reply->readAll();
+        qDebug() << Q_FUNC_INFO << "Network::sendImage : Success" <<reply->readAll();
         delete reply;
     }
     else {
-        qDebug() << "Network::sendImage : Failure" <<reply->errorString();
+        qDebug() << Q_FUNC_INFO << "Network::sendImage : Failure" <<reply->errorString();
         delete reply;
         return false;
     }
