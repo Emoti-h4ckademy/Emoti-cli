@@ -52,7 +52,7 @@ int Camera::setDevice(QCameraInfo &_device)
         return 1;
     }
 
-    if (!newImageCapture->isCaptureDestinationSupported(QCameraImageCapture::CaptureToFile))
+    if (!newImageCapture->isCaptureDestinationSupported(QCameraImageCapture::CaptureToBuffer))
     {
         qDebug() << Q_FUNC_INFO << "Cannot capture to memory buffer";
         delete newImageCapture;
@@ -119,28 +119,15 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
     }));
 
 #ifndef QT_NO_DEBUG_OUTPUT
-    //Log signals
-
-    //All except error()
+    //Log all signals except error
     myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::bufferFormatChanged, [](){qDebug() << Q_FUNC_INFO << "bufferFormatChanged";}));
     myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::captureDestinationChanged, [](){qDebug() << Q_FUNC_INFO << "captureDestinationChanged";}));
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageAvailable, [](){qDebug() << Q_FUNC_INFO << "imageAvailable";}));
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageCaptured, [](){qDebug() << Q_FUNC_INFO << "imageCaptured";}));
+    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageAvailable, [](){qDebug() << Q_FUNC_INFO << "imageAvailable";})); //<<<<<<<<<<<<<<<<<<<
+    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageCaptured, [](){qDebug() << Q_FUNC_INFO << "imageCaptured";})); //<<<<<<<<<<<<<<<<<<<
     myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageExposed, [](){qDebug() << Q_FUNC_INFO << "imageExposed";}));
     myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageMetadataAvailable, [](){qDebug() << Q_FUNC_INFO <<"imageMetadataAvailable";}));
     myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageSaved, [](){qDebug() << Q_FUNC_INFO << "imageSaved";}));
     myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::readyForCaptureChanged, [](){qDebug() << Q_FUNC_INFO << "readyForCaptureChanged";}));
-
-
-
-    qDebug() << Q_FUNC_INFO << "Logging signals";
-    for (auto it : myEvents)
-    {
-         qDebug() << Q_FUNC_INFO << bool(it);
-    }
-
-
-
 #endif
 
 
