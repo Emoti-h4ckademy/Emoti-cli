@@ -25,6 +25,9 @@ public:
      */
     enum lockStatus {DEVICE_LOCKED, DEVICE_FREE};
 
+    //TODO: Document
+    enum imageDestination {DESTINATION_MEMORY, DESTINATION_FILE};
+
     /**
      * @brief setup Initialize the camera to the required values
      * @param _device Computers device to use
@@ -33,7 +36,8 @@ public:
      * Logs with qDebug
      * In case of errors it keeps the previous state
      */
-    int setup (QCameraInfo& _device, lockStatus _deviceLocked = DEVICE_FREE);
+    //TODO: Update documentation
+    int setup (QCameraInfo& _device, lockStatus _deviceLocked = DEVICE_FREE, imageDestination _tempDestination = DESTINATION_MEMORY);
 
     /**
      * @brief changeDevice Changes the used device to capture images
@@ -41,7 +45,8 @@ public:
      * @return 0 if OK, !0 if error.
      * Logs with qDebug
      */
-    int setDevice (QCameraInfo& _device);
+    //TODO: Update documentation
+    int setDevice (QCameraInfo& _device, imageDestination _tempDestination);
 
     int setDeviceMode (lockStatus _deviceLocked);
 
@@ -52,7 +57,7 @@ public:
      * @return Shared_ptr to the image captured. Nullptr if it wasn't possible to capture it.
      * Logs with qDebug
      */
-    std::shared_ptr<CamImage> captureImageSync(const char* _format = "PNG");
+    std::shared_ptr<CamImage> captureImageSync(const char* _format = "png");
 
 
 private:
@@ -60,6 +65,12 @@ private:
     QCameraImageCapture *camImageCapture;
     lockStatus deviceLocked;
     QBasicMutex camMutex;
+
+    imageDestination camDestination;
+
+    //TODO: Documentation
+    std::shared_ptr<CamImage> captureImageSync_memory(const char *_format);
+    std::shared_ptr<CamImage> captureImageSync_file(const char *_format);
 
     /**
      * @brief start Starts the camera (if needed) to capture images

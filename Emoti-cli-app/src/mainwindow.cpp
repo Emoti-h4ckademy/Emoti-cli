@@ -57,7 +57,7 @@ void MainWindow::cameraList_Change()
     }
 
     QCameraInfo qi = this->camList.at(ind);
-    this->cam.setup(qi); //TODO handle errors
+    this->cam.setup(qi, Camera::DEVICE_FREE, Camera::DESTINATION_FILE); //TODO handle errors
 }
 
 void MainWindow::getImageAndSend()
@@ -70,7 +70,7 @@ void MainWindow::getImageAndSend()
     for (int i = 0; i < 1; i++)
     {
         qDebug() << Q_FUNC_INFO << "START" << i << "----------------------------------------";
-        img = cam.captureImageSync("PNG");
+        img = cam.captureImageSync("png");
         qDebug() << Q_FUNC_INFO << "END" << i << "----------------------------------------";
     }
 

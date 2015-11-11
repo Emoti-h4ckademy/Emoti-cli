@@ -102,3 +102,16 @@ std::shared_ptr<CamImage> qVideoFrame2CamImage (QVideoFrame &_src, const char *_
 
     return output;
 }
+
+std::shared_ptr<CamImage> jpgFile2CamImage(const QString _path, const char *_format)
+{
+    QImage jpgImg;
+
+    if (!jpgImg.load(_path))
+    {
+        qDebug() << Q_FUNC_INFO << "Could not read tmp file";
+        return nullptr;
+    }
+
+    return qImage2CamImage(jpgImg, _format);
+}

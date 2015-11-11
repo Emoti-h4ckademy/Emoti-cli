@@ -1,9 +1,11 @@
 #include "camera.h"
 #include <QDebug>
 #include <QCoreApplication>
+#include <QDir>
+#include <QTemporaryFile>
 
 Camera::Camera()
-    :cam(nullptr), camImageCapture(nullptr), deviceLocked(DEVICE_FREE), camMutex()
+    :cam(nullptr), camImageCapture(nullptr), deviceLocked(DEVICE_FREE), camMutex(), camDestination(DESTINATION_MEMORY)
 {
 }
 
@@ -21,14 +23,16 @@ Camera::~Camera()
 }
 
 
-int Camera::setup(QCameraInfo& _device, lockStatus _deviceLocked)
+int Camera::setup(QCameraInfo& _device, lockStatus _deviceLocked, imageDestination _tempDestination)
 {
     //setDevice already starts the camera
-    qDebug() << Q_FUNC_INFO << "Setting up device: " << _device.deviceName() << "(" << _device.description() << "), " << (_deviceLocked == DEVICE_LOCKED ? "LOCKED":"FREE");
-    return (this->setDevice(_device) || this->setDeviceMode(_deviceLocked));
+    qDebug() << Q_FUNC_INFO << "Setting up device: " << _device.deviceName() << "(" << _device.description() << "), "
+             << (_deviceLocked == DEVICE_LOCKED ? "LOCKED":"FREE")
+             << (_tempDestination == DESTINATION_FILE ? "FILE":"MEMORY");
+    return (this->setDevice(_device, _tempDestination) || this->setDeviceMode(_deviceLocked));
 }
 
-int Camera::setDevice(QCameraInfo &_device)
+int Camera::setDevice(QCameraInfo &_device, imageDestination _tempDestination)
 {
     if (_device.isNull())
     {
@@ -44,6 +48,8 @@ int Camera::setDevice(QCameraInfo &_device)
         return 1;
     }
 
+    newCam->setCaptureMode(QCamera::CaptureStillImage);
+
     QCameraImageCapture* newImageCapture = new (std::nothrow) QCameraImageCapture(newCam.get());
 
     if (!newImageCapture)
@@ -52,20 +58,23 @@ int Camera::setDevice(QCameraInfo &_device)
         return 1;
     }
 
-    if (!newImageCapture->isCaptureDestinationSupported(QCameraImageCapture::CaptureToBuffer))
+    if (_tempDestination == Camera::DESTINATION_MEMORY && newImageCapture->isCaptureDestinationSupported(QCameraImageCapture::CaptureToBuffer))
     {
-        qDebug() << Q_FUNC_INFO << "Cannot capture to memory buffer";
-        delete newImageCapture;
-        return 1;
+        newImageCapture->setCaptureDestination(QCameraImageCapture::CaptureToBuffer);
+        this->camDestination = Camera::DESTINATION_MEMORY;
+        qDebug() << Q_FUNC_INFO << "Buffering image in memory";
+    }
+    else
+    {
+        newImageCapture->setCaptureDestination(QCameraImageCapture::CaptureToFile);
+        this->camDestination = Camera::DESTINATION_FILE;
+        qDebug() << Q_FUNC_INFO << "Buffering image in a temporal file";
     }
 
     //Everything is OK, swap the new camera and discard the old one
     this->cam = newCam;
     if (this->camImageCapture) delete camImageCapture;
     this->camImageCapture = newImageCapture;
-
-    this->cam->setCaptureMode(QCamera::CaptureStillImage);
-    this->camImageCapture->setCaptureDestination(QCameraImageCapture::CaptureToBuffer);
 
     return 0;
 
@@ -80,24 +89,9 @@ int Camera::setDeviceMode(Camera::lockStatus _deviceLocked)
     return this->start(true);
 }
 
-std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
+std::shared_ptr<CamImage> Camera::captureImageSync_memory(const char *_format)
 {
-    if (!this->camMutex.tryLock())
-    {
-        qDebug() << Q_FUNC_INFO << "Already capturing an image";
-        return nullptr;
-    }
-
-
     std::shared_ptr<CamImage> capturedImage;
-
-    //Try to start the camera (if needed)
-    if (this->start(false) && (!this->camImageCapture->isReadyForCapture()))
-    {
-        qDebug() << Q_FUNC_INFO << "Not ready for capture --- Camera state" << this->cam->state();
-        this->camMutex.unlock();
-        return nullptr;
-    }
 
     //Signal capture
     QObject holder;
@@ -108,32 +102,19 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
                      &eventLoop, &QEventLoop::quit));
     myEvents.push_back(holder.connect(this->camImageCapture, SIGNAL(error(int,QCameraImageCapture::Error,QString)),
                      &eventLoop, SLOT(quit())));
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::readyForCaptureChanged,
-                     &eventLoop, &QEventLoop::quit));
-    //Bind the signal imageAvailable again but to a different function to save the image
+
+    //Capture image from memory
     myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageAvailable,
                      [&capturedImage, &_format](int _id, const QVideoFrame &_image)
     {
-        qDebug() << Q_FUNC_INFO << "ImageCaptured" << _id;
+        qDebug() << Q_FUNC_INFO << "imageAvailable" << _id;
         capturedImage = qVideoFrame2CamImage (const_cast<QVideoFrame&> (_image), _format);
     }));
-
-#ifndef QT_NO_DEBUG_OUTPUT
-    //Log all signals except error
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::bufferFormatChanged, [](){qDebug() << Q_FUNC_INFO << "bufferFormatChanged";}));
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::captureDestinationChanged, [](){qDebug() << Q_FUNC_INFO << "captureDestinationChanged";}));
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageAvailable, [](){qDebug() << Q_FUNC_INFO << "imageAvailable";})); //<<<<<<<<<<<<<<<<<<<
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageCaptured, [](){qDebug() << Q_FUNC_INFO << "imageCaptured";})); //<<<<<<<<<<<<<<<<<<<
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageExposed, [](){qDebug() << Q_FUNC_INFO << "imageExposed";}));
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageMetadataAvailable, [](){qDebug() << Q_FUNC_INFO <<"imageMetadataAvailable";}));
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageSaved, [](){qDebug() << Q_FUNC_INFO << "imageSaved";}));
-    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::readyForCaptureChanged, [](){qDebug() << Q_FUNC_INFO << "readyForCaptureChanged";}));
-#endif
-
 
     this->cam->searchAndLock();
     this->camImageCapture->capture();
     this->cam->unlock();
+
     eventLoop.exec(); // <<<<<<<<<<<<< Holds until a signal is received
 
     //Disconnect from all signals
@@ -146,6 +127,95 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
     {
         qDebug() << Q_FUNC_INFO << this->camImageCapture->errorString()  << this->cam->status();
         capturedImage = nullptr;
+    }
+
+    return capturedImage;
+
+}
+
+std::shared_ptr<CamImage> Camera::captureImageSync_file(const char *_format)
+{
+    std::shared_ptr<CamImage> capturedImage;
+
+    //Signal capture
+    QObject holder;
+    QEventLoop eventLoop (&holder);
+    std::vector <QMetaObject::Connection> myEvents;
+
+    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageSaved,
+                     &eventLoop, &QEventLoop::quit));
+    myEvents.push_back(holder.connect(this->camImageCapture, SIGNAL(error(int,QCameraImageCapture::Error,QString)),
+                     &eventLoop, SLOT(quit())));
+
+    //Capture image from file
+    myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::imageSaved,
+                     [&capturedImage, &_format](int _id, const QString &_fileName)
+    {
+        qDebug() << Q_FUNC_INFO << "imageSaved" << _id << "Path: " << _fileName;
+        capturedImage = jpgFile2CamImage(_fileName, _format);
+    }));
+
+    //Setup temp file --> path
+    QString fTemplate = QDir::tempPath() + "/emoti-XXXXXX.jpg";
+
+    QTemporaryFile myfile (fTemplate);
+    if (!myfile.open()) {
+        qDebug() << Q_FUNC_INFO << "Cannot create a temp file. Template: " << fTemplate;
+        return nullptr;
+    }
+
+    qDebug() << Q_FUNC_INFO << "TEMP. Filename: " << myfile.fileName() << " Autoremove: " << myfile.autoRemove();
+
+    this->cam->searchAndLock();
+    this->camImageCapture->capture(myfile.fileName());
+    this->cam->unlock();
+
+    eventLoop.exec(); // <<<<<<<<<<<<< Holds until a signal is received
+
+    myfile.close();
+
+    //Disconnect from all signals
+    for (auto it : myEvents)
+    {
+        holder.disconnect(it);
+    }
+
+    if (this->camImageCapture->error() != QCameraImageCapture::NoError)
+    {
+        qDebug() << Q_FUNC_INFO << this->camImageCapture->errorString()  << this->cam->status();
+        capturedImage = nullptr;
+    }
+
+    return capturedImage;
+
+}
+
+
+
+std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
+{
+    if (!this->camMutex.tryLock())
+    {
+        qDebug() << Q_FUNC_INFO << "Already capturing an image";
+        return nullptr;
+    }
+
+    //Try to start the camera (if needed)
+    if (this->start(false) && (!this->camImageCapture->isReadyForCapture()))
+    {
+        qDebug() << Q_FUNC_INFO << "Not ready for capture --- Camera state" << this->cam->state();
+        this->camMutex.unlock();
+        return nullptr;
+    }
+
+    std::shared_ptr<CamImage> capturedImage;
+    if (this->camDestination == Camera::DESTINATION_MEMORY)
+    {
+        capturedImage = captureImageSync_memory(_format);
+    }
+    else
+    {
+        capturedImage = captureImageSync_file(_format);
     }
 
     //Stop the camera if needed

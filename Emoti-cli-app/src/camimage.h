@@ -48,4 +48,7 @@ std::shared_ptr<CamImage> qImage2CamImage (QImage &_src, const char* _format = "
  */
 std::shared_ptr<CamImage> qVideoFrame2CamImage (QVideoFrame &_src, const char* _format = "PNG");
 
+//TODO: Document
+std::shared_ptr<CamImage> jpgFile2CamImage (const QString _path, const char* _format = "PNG");
+
 #endif // CAMIMAGE_H
