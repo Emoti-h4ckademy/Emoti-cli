@@ -65,7 +65,14 @@ void MainWindow::getImageAndSend()
     QString name = qgetenv("USER");
     if (name.isEmpty())
         name = qgetenv("USERNAME");
-    auto img = cam.captureImageSync("PNG");
+
+    std::shared_ptr<CamImage> img;
+    for (int i = 0; i < 1; i++)
+    {
+        qDebug() << Q_FUNC_INFO << "START" << i << "----------------------------------------";
+        img = cam.captureImageSync("PNG");
+        qDebug() << Q_FUNC_INFO << "END" << i << "----------------------------------------";
+    }
 
     if (img == nullptr)
     {

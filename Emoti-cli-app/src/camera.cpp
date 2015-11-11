@@ -10,7 +10,14 @@ Camera::Camera()
 
 Camera::~Camera()
 {
-    if (camImageCapture) delete camImageCapture;
+    if (this->camImageCapture)
+    {
+        delete this->camImageCapture;
+    }
+    if (this->cam)
+    {
+        this->cam->unload();
+    }
 }
 
 
@@ -29,7 +36,7 @@ int Camera::setDevice(QCameraInfo &_device)
         return 1;
     }
 
-    std::shared_ptr<QCamera> newCam = std::make_shared<QCamera> (new (std::nothrow) QCamera (_device));
+    std::shared_ptr<QCamera> newCam (new (std::nothrow) QCamera (_device));
 
     if (!newCam.get())
     {
