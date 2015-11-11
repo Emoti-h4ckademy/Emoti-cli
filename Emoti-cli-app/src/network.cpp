@@ -25,12 +25,12 @@ bool Network::sendImage(std::shared_ptr<CamImage> _image, QString _username, QSt
 
     // the HTTP request
     QJsonObject json;
-    json.insert("Username", _username);
-    json.insert("Time",_time);
+    json.insert("username", _username);
+    json.insert("time",_time);
 
     QByteArray bimg (reinterpret_cast<const char*> (_image->getData().get()), _image->getSize());
     QString baseimg = bimg.toBase64();
-    json.insert("Image", baseimg);
+    json.insert("image", baseimg);
 
     QJsonDocument jsonDoc;
     jsonDoc.setObject(json);
