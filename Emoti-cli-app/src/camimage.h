@@ -48,7 +48,13 @@ std::shared_ptr<CamImage> qImage2CamImage (QImage &_src, const char* _format = "
  */
 std::shared_ptr<CamImage> qVideoFrame2CamImage (QVideoFrame &_src, const char* _format = "PNG");
 
-//TODO: Document
+/**
+ * @brief jpgFile2CamImage Reads an image file (.jpg) and converts it into a CamImage
+ * @param _path Path to the file
+ * @param _format Format to be given to the CamImage, by default PNG
+ * @return shrptr to the image or nullptr
+ * Logs with qDebug
+ */
 std::shared_ptr<CamImage> jpgFile2CamImage (const QString _path, const char* _format = "PNG");
 
 #endif // CAMIMAGE_H

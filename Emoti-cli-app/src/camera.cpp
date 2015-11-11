@@ -5,7 +5,12 @@
 #include <QTemporaryFile>
 
 Camera::Camera()
-    :cam(nullptr), camImageCapture(nullptr), deviceLocked(DEVICE_FREE), camMutex(), camDestination(DESTINATION_MEMORY)
+    :cam(nullptr),
+      camImageCapture(nullptr),
+      deviceLocked(DEVICE_FREE),
+      camMutex(),
+      camDestination(DESTINATION_MEMORY),
+      fTemplate(QDir::tempPath() + "/emoti-XXXXXX.jpg")
 {
 }
 
@@ -25,12 +30,16 @@ Camera::~Camera()
 
 int Camera::setup(QCameraInfo& _device, lockStatus _deviceLocked, imageDestination _tempDestination)
 {
-    //setDevice already starts the camera
+#ifndef QT_NO_DEBUG_OUTPUT
     qDebug() << Q_FUNC_INFO << "Setting up device: " << _device.deviceName() << "(" << _device.description() << "), "
              << (_deviceLocked == DEVICE_LOCKED ? "LOCKED":"FREE")
              << (_tempDestination == DESTINATION_FILE ? "FILE":"MEMORY");
+#endif
+
+    //setDevice already starts the camera
     return (this->setDevice(_device, _tempDestination) || this->setDeviceMode(_deviceLocked));
 }
+
 
 int Camera::setDevice(QCameraInfo &_device, imageDestination _tempDestination)
 {
@@ -41,17 +50,14 @@ int Camera::setDevice(QCameraInfo &_device, imageDestination _tempDestination)
     }
 
     std::shared_ptr<QCamera> newCam (new (std::nothrow) QCamera (_device));
-
     if (!newCam.get())
     {
         qDebug() << Q_FUNC_INFO << "Allocation error";
         return 1;
     }
-
     newCam->setCaptureMode(QCamera::CaptureStillImage);
 
     QCameraImageCapture* newImageCapture = new (std::nothrow) QCameraImageCapture(newCam.get());
-
     if (!newImageCapture)
     {
         qDebug() << Q_FUNC_INFO << "Allocation error";
@@ -77,8 +83,8 @@ int Camera::setDevice(QCameraInfo &_device, imageDestination _tempDestination)
     this->camImageCapture = newImageCapture;
 
     return 0;
-
 }
+
 
 int Camera::setDeviceMode(Camera::lockStatus _deviceLocked)
 {
@@ -91,7 +97,7 @@ int Camera::setDeviceMode(Camera::lockStatus _deviceLocked)
 
 std::shared_ptr<CamImage> Camera::captureImageSync_memory(const char *_format)
 {
-    std::shared_ptr<CamImage> capturedImage;
+    std::shared_ptr<CamImage> capturedImage = nullptr;
 
     //Signal capture
     QObject holder;
@@ -123,19 +129,19 @@ std::shared_ptr<CamImage> Camera::captureImageSync_memory(const char *_format)
         holder.disconnect(it);
     }
 
+#ifndef QT_NO_DEBUG_OUTPUT
     if (this->camImageCapture->error() != QCameraImageCapture::NoError)
     {
         qDebug() << Q_FUNC_INFO << this->camImageCapture->errorString()  << this->cam->status();
-        capturedImage = nullptr;
     }
+#endif
 
     return capturedImage;
-
 }
 
 std::shared_ptr<CamImage> Camera::captureImageSync_file(const char *_format)
 {
-    std::shared_ptr<CamImage> capturedImage;
+    std::shared_ptr<CamImage> capturedImage = nullptr;
 
     //Signal capture
     QObject holder;
@@ -156,9 +162,7 @@ std::shared_ptr<CamImage> Camera::captureImageSync_file(const char *_format)
     }));
 
     //Setup temp file --> path
-    QString fTemplate = QDir::tempPath() + "/emoti-XXXXXX.jpg";
-
-    QTemporaryFile myfile (fTemplate);
+    QTemporaryFile myfile (this->fTemplate);
     if (!myfile.open()) {
         qDebug() << Q_FUNC_INFO << "Cannot create a temp file. Template: " << fTemplate;
         return nullptr;
@@ -180,14 +184,14 @@ std::shared_ptr<CamImage> Camera::captureImageSync_file(const char *_format)
         holder.disconnect(it);
     }
 
+#ifndef QT_NO_DEBUG_OUTPUT
     if (this->camImageCapture->error() != QCameraImageCapture::NoError)
     {
         qDebug() << Q_FUNC_INFO << this->camImageCapture->errorString()  << this->cam->status();
-        capturedImage = nullptr;
     }
+#endif
 
     return capturedImage;
-
 }
 
 
@@ -208,19 +212,12 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
         return nullptr;
     }
 
-    std::shared_ptr<CamImage> capturedImage;
-    if (this->camDestination == Camera::DESTINATION_MEMORY)
-    {
-        capturedImage = captureImageSync_memory(_format);
-    }
-    else
-    {
-        capturedImage = captureImageSync_file(_format);
-    }
+    std::shared_ptr<CamImage> capturedImage (this->camDestination == Camera::DESTINATION_MEMORY ?
+                                                 captureImageSync_memory(_format):
+                                                 captureImageSync_file(_format));
 
     //Stop the camera if needed
     this->stop(false);
-
     this->camMutex.unlock();
 
     return capturedImage;
@@ -231,13 +228,16 @@ int Camera::start(bool _firstTime)
     qDebug() << Q_FUNC_INFO << "called. First time: " << _firstTime;
     if (_firstTime)
     {
+        //Firsttime && Device locked
         if (this->deviceLocked == DEVICE_LOCKED) return this->startSync();
     }
     else
     {
+        //No firsttime && Device free
         if (this->deviceLocked == DEVICE_FREE) return this->startSync();
     }
 
+    //The other two options (first time and device free, no first time and device locked)
     return 0;
 }
 
