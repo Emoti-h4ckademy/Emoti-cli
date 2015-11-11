@@ -118,7 +118,16 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
         capturedImage = qVideoFrame2CamImage (const_cast<QVideoFrame&> (_image), _format);
     }));
 
-    //Capture
+#ifndef QT_NO_DEBUG_OUTPUT
+    //Log signals
+    qDebug() << Q_FUNC_INFO << "Logging signals";
+    for (auto it : myEvents)
+    {
+         qDebug() << Q_FUNC_INFO << bool(it);
+    }
+#endif
+
+
     this->cam->searchAndLock();
     this->camImageCapture->capture();
     this->cam->unlock();
