@@ -78,7 +78,7 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
     std::shared_ptr<CamImage> capturedImage;
 
     //Try to start the camera (if needed)
-    if (this->start(false))
+    if (this->start(false) && (!this->camImageCapture->isReadyForCapture()))
     {
         qDebug() << Q_FUNC_INFO << "Not ready for capture --- Camera state" << this->cam->state();
         return nullptr;
