@@ -5,6 +5,7 @@
 #include <QCamera>
 #include <QCameraImageCapture>
 #include <QCameraInfo>
+#include <QMutex>
 
 #include "camimage.h"
 
@@ -58,6 +59,7 @@ private:
     std::shared_ptr<QCamera> cam;
     QCameraImageCapture *camImageCapture;
     lockStatus deviceLocked;
+    QBasicMutex camMutex;
 
     /**
      * @brief start Starts the camera (if needed) to capture images

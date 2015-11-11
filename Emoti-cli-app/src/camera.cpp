@@ -3,7 +3,7 @@
 #include <QCoreApplication>
 
 Camera::Camera()
-    :cam(nullptr), camImageCapture(nullptr), deviceLocked(DEVICE_FREE)
+    :cam(nullptr), camImageCapture(nullptr), deviceLocked(DEVICE_FREE), camMutex()
 {
 }
 
@@ -75,12 +75,20 @@ int Camera::setDeviceMode(Camera::lockStatus _deviceLocked)
 
 std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
 {
+    if (!this->camMutex.tryLock())
+    {
+        qDebug() << Q_FUNC_INFO << "Already capturing an image";
+        return nullptr;
+    }
+
+
     std::shared_ptr<CamImage> capturedImage;
 
     //Try to start the camera (if needed)
     if (this->start(false) && (!this->camImageCapture->isReadyForCapture()))
     {
         qDebug() << Q_FUNC_INFO << "Not ready for capture --- Camera state" << this->cam->state();
+        this->camMutex.unlock();
         return nullptr;
     }
 
@@ -123,6 +131,8 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
 
     //Stop the camera if needed
     this->stop(false);
+
+    this->camMutex.unlock();
 
     return capturedImage;
 }

@@ -67,6 +67,12 @@ void MainWindow::getImageAndSend()
         name = qgetenv("USERNAME");
     auto img = cam.captureImageSync("PNG");
 
+    if (img == nullptr)
+    {
+        qDebug() << Q_FUNC_INFO << "No image captured. Nothing is sent";
+        return;
+    }
+
     QDateTime time = QDateTime::currentDateTime();
 
     QString server = this->ui->textServer->toPlainText();
