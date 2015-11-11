@@ -18,6 +18,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //Button
     this->connect(this->ui->buttonSend, SIGNAL(clicked(bool)), this, SLOT(getImageAndSend()));
 
+    //Text
+    this->ui->textServer->setText("Url servidor");
+
 
 }
 
@@ -65,6 +68,9 @@ void MainWindow::getImageAndSend()
     auto img = cam.captureImageSync("PNG");
 
     QDateTime time = QDateTime::currentDateTime();
-    Network net("http://10.102.83.80:8080/imagepost");
+
+    QString server = this->ui->textServer->toPlainText();
+
+    Network net(server);
     net.sendImage(img, name, time.toString());
 }
