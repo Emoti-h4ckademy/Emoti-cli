@@ -23,7 +23,7 @@ Camera::~Camera()
     }
     if (this->cam)
     {
-        this->cam->unload();
+        this->stop(true);
     }
 }
 
