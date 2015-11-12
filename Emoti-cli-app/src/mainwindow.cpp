@@ -35,7 +35,7 @@ void MainWindow::cameraList_Setup()
 
     for (QCameraInfo &cameraInfo : camList)
     {
-        this->ui->camListBox->addItem(cameraInfo.deviceName());
+        this->ui->camListBox->addItem(cameraInfo.description());
         qDebug() << Q_FUNC_INFO << "Detected device: " << cameraInfo.deviceName();
     }
 
@@ -57,7 +57,7 @@ void MainWindow::cameraList_Change()
     }
 
     QCameraInfo qi = this->camList.at(ind);
-    this->cam.setup(qi, Camera::DEVICE_FREE, Camera::DESTINATION_FILE); //TODO handle errors
+    this->cam.setup(qi, Camera::DEVICE_FREE, Camera::DESTINATION_MEMORY); //TODO handle errors
 }
 
 void MainWindow::getImageAndSend()
@@ -67,12 +67,8 @@ void MainWindow::getImageAndSend()
         name = qgetenv("USERNAME");
 
     std::shared_ptr<CamImage> img;
-    for (int i = 0; i < 1; i++)
-    {
-        qDebug() << Q_FUNC_INFO << "START" << i << "----------------------------------------";
-        img = cam.captureImageSync("png");
-        qDebug() << Q_FUNC_INFO << "END" << i << "----------------------------------------";
-    }
+
+    img = cam.captureImageSync("png");
 
     if (img == nullptr)
     {
