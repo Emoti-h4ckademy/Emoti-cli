@@ -25,35 +25,31 @@ bool Network::sendImage(std::shared_ptr<CamImage> _image, QString _username, QSt
 
     // the HTTP request
     QJsonObject json;
-    json.insert("Username", _username);
-    json.insert("Time",_time);
+    json.insert("username", _username);
+    json.insert("time",_time);
 
     QByteArray bimg (reinterpret_cast<const char*> (_image->getData().get()), _image->getSize());
     QString baseimg = bimg.toBase64();
-    json.insert("Image", baseimg);
+    json.insert("image", baseimg);
 
     QJsonDocument jsonDoc;
     jsonDoc.setObject(json);
 
-    qDebug() << "Network::sendImage POST DATA TO " << this->serverUrl << "------- " ;//<< jsonDoc.toJson();// << json;
+    qDebug() << "Network::sendImage POST DATA TO " << this->serverUrl << "  " << jsonDoc.toJson().size();
 
     QNetworkRequest req(QUrl(this->serverUrl));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    QNetworkReply *reply = mgr.post(req, jsonDoc.toJson());
+    std::shared_ptr<QNetworkReply> reply (mgr.post(req, jsonDoc.toJson()));
 
 
     eventLoop.exec(); // blocks stack until "finished()" has been called
     eventLoop.disconnect(connection);
 
-    if (reply->error() == QNetworkReply::NoError) {
-        qDebug() << Q_FUNC_INFO << "Network::sendImage : Success" <<reply->readAll();
-        delete reply;
-    }
-    else {
-        qDebug() << Q_FUNC_INFO << "Network::sendImage : Failure" <<reply->errorString();
-        delete reply;
+    if (reply->error() != QNetworkReply::NoError) {
+        qDebug() << Q_FUNC_INFO << "Network::sendImage : Failure" <<reply->errorString() << "  " << jsonDoc.toJson().size();
         return false;
     }
 
+    qDebug() << Q_FUNC_INFO << "Network::sendImage : Success" <<reply->readAll() << "  " << jsonDoc.toJson().size();
     return true;
 }

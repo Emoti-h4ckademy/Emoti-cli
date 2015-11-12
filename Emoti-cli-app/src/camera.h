@@ -5,6 +5,7 @@
 #include <QCamera>
 #include <QCameraImageCapture>
 #include <QCameraInfo>
+#include <QMutex>
 
 #include "camimage.h"
 
@@ -25,39 +26,59 @@ public:
     enum lockStatus {DEVICE_LOCKED, DEVICE_FREE};
 
     /**
+     * @brief Due to some cameras not being able to store the generated image from QCameraImageCapture
+     * directly to memory, it's needed a temporal file to store and then read it. If memory is selected
+     * but the device is imcompatible, it will still use a file.
+     */
+    enum imageDestination {DESTINATION_MEMORY, DESTINATION_FILE};
+
+    /**
      * @brief setup Initialize the camera to the required values
      * @param _device Computers device to use
      * @param _deviceLocked Check enum lockStatus (use camera always or not)
+     * @param _tempDestination Check emum imageDestination (use memory or temp file while handling the images)
      * @return 0 if OK, !0 if errors
      * Logs with qDebug
      * In case of errors it keeps the previous state
      */
-    int setup (QCameraInfo& _device, lockStatus _deviceLocked = DEVICE_FREE);
+    int setup (QCameraInfo& _device, lockStatus _deviceLocked = DEVICE_FREE, imageDestination _tempDestination = DESTINATION_MEMORY);
 
     /**
      * @brief changeDevice Changes the used device to capture images
      * @param _device New device to be used
+     * @param _tempDestination Check emum imageDestination (use memory or temp file while handling the images)
      * @return 0 if OK, !0 if error.
      * Logs with qDebug
      */
-    int setDevice (QCameraInfo& _device);
+    int setDevice (QCameraInfo& _device, imageDestination _tempDestination);
 
     int setDeviceMode (lockStatus _deviceLocked);
 
     /**
      * @brief captureImageSync Captures an image synchronously
      * (waits until the image is ready or until it finds an error to return)
+     * A mutex is used to be sure only one image is used at a time
      * @param _format - Format of the image to be returned
      * @return Shared_ptr to the image captured. Nullptr if it wasn't possible to capture it.
      * Logs with qDebug
      */
-    std::shared_ptr<CamImage> captureImageSync(const char* _format = "PNG");
+    std::shared_ptr<CamImage> captureImageSync(const char* _format = "png");
 
 
 private:
     std::shared_ptr<QCamera> cam;
     QCameraImageCapture *camImageCapture;
     lockStatus deviceLocked;
+    QBasicMutex camMutex;
+    imageDestination camDestination;
+
+    //Template to use in the temp file
+    const QString fTemplate;
+
+    //Helpers to differenciate between capturing with the camera with a temp file or using just memory.
+    //Checks and resource locks are not done.
+    std::shared_ptr<CamImage> captureImageSync_memory(const char *_format);
+    std::shared_ptr<CamImage> captureImageSync_file(const char *_format);
 
     /**
      * @brief start Starts the camera (if needed) to capture images
