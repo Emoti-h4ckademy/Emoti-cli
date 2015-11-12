@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += qml quick widgets network multimedia
+QT += widgets network multimedia
 QMAKE_CXXFLAGS += -Wall -Wextra
 CONFIG += c++11
 
@@ -15,7 +15,7 @@ SOURCES += src/main.cpp \
     src/camimage.cpp \
     src/mainwindow.cpp
 
-RESOURCES += resources/qml.qrc
+RESOURCES +=
 
 CONFIG(release, debug|release) {
     #This is a release build
