@@ -186,7 +186,7 @@ int MainWindow::getImageAndSend(bool ignoreRestriction)
         goto setTimerandExit;
    }
 
-    img = cam.captureImageSync("png");
+    img = cam.captureImageSync("jpg");
 
     if (img == nullptr)
     {
@@ -212,7 +212,7 @@ setTimerandExit:
     }
     else
     {
-        timeout = nextSend.toMSecsSinceEpoch() - actualTime.toMSecsSinceEpoch();
+        timeout = MainWindow::SAMPLERATEFAILEDs * 1000;
     }
 
     this->sendTimer.stop();
