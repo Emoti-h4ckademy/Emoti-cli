@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QDate>
 #include <QTimer>
+#include <QSystemTrayIcon>
 
 #include "ui_mainwindow.h"
 #include "camera.h"
@@ -38,7 +39,14 @@ private:
     QMutex sendMutex;
     QTimer sendTimer;
 
+    QSystemTrayIcon* trayIcon;
+    QMenu* trayIconMenu;
+
+    bool notificationsActive;
+    const int NOTIFICATIONs = 5;
+
     int getImageAndSend(bool ignoreRestriction);
+    int loadTray();
 
 
 public slots:
@@ -46,6 +54,7 @@ public slots:
     void cameraChange();
     void sendImage();
     void sampleRateChange();
+    void notificationsChange();
 
 };
 

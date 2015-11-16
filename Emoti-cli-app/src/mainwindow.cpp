@@ -10,7 +10,10 @@ MainWindow::MainWindow(QWidget *parent) :
     sampleRateSec(MainWindow::SAMPLERATEDEFAULTs),
     lastSend(QDateTime::currentDateTime()),
     sendMutex(),
-    sendTimer()
+    sendTimer(),
+    trayIcon(new (std::nothrow) QSystemTrayIcon()),
+    trayIconMenu (new (std::nothrow) QMenu()),
+    notificationsActive(true)
 {
     this->username = qgetenv("USER");
     if (this->username.isEmpty())
@@ -48,15 +51,58 @@ MainWindow::MainWindow(QWidget *parent) :
     this->connect(&this->sendTimer, SIGNAL(timeout()), this, SLOT(sendImage()));
     this->sendTimer.start(this->sampleRateSec * 1000);
 
+    //Tray
+    this->trayIcon->setContextMenu(this->trayIconMenu);
+    this->loadTray();
+
+    //Notifications
+    this->notificationsActive = this->trayIcon->supportsMessages();
+    if (!this->notificationsActive)
+    {
+        this->ui->checkBoxNotifications->hide();
+    }
+    else
+    {
+        this->ui->checkBoxNotifications->setChecked(true);
+        this->connect(this->ui->checkBoxNotifications, SIGNAL(clicked(bool)), this, SLOT(notificationsChange()));
+    }
+
+}
+
+int MainWindow::loadTray()
+{
+
+    QAction *restoreAction = new QAction(QObject::tr("&Restore"), this);
+    this->connect(restoreAction, SIGNAL(triggered()), this, SLOT(showNormal()));
+    this->trayIcon->contextMenu()->addAction(restoreAction);
+
+    QAction *quitAction = new QAction(QObject::tr("&Quit"), this);
+    this->connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
+    this->trayIcon->contextMenu()->addAction(quitAction);
+
+    this->connect(this->trayIcon, &QSystemTrayIcon::activated, this,
+                  [this](QSystemTrayIcon::ActivationReason _reason)
+    {
+        qDebug() << Q_FUNC_INFO << "Tray icon received action: " << _reason;
+        if ((_reason != QSystemTrayIcon::Context))// || (_reason == QSystemTrayIcon::Trigger))
+        {
+            this->showNormal();
+        }
+    });
+
+    this->trayIcon->setParent(this);
+    this->trayIcon->setIcon(QIcon(":/resources/emoti-icon.png"));
+    this->trayIcon->show();
+
+    return 0;
 
 }
 
 MainWindow::~MainWindow()
 {
-    if (this->ui)
-    {
-        delete ui;
-    }
+    if (this->ui) delete ui;
+    if (this->trayIcon) delete this->trayIcon;
+    if (this->trayIconMenu) delete this->trayIconMenu;
 }
 
 void MainWindow::cameraList_Setup()
@@ -151,6 +197,10 @@ int MainWindow::getImageAndSend(bool ignoreRestriction)
 
 
     neterror = net.sendImage(img, this->username, actualTime.toString());
+    if ((!neterror) && (this->notificationsActive))
+    {
+        this->trayIcon->showMessage("Emoti", "There was an error sending the last image");
+    }
 
 
 setTimerandExit:
@@ -196,4 +246,9 @@ void MainWindow::sampleRateChange()
 
 
     this->getImageAndSend(false);
+}
+
+void MainWindow::notificationsChange()
+{
+    this->notificationsActive = this->ui->checkBoxNotifications->checkState();
 }

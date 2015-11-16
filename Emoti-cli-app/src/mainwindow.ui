@@ -154,6 +154,19 @@ p, li { white-space: pre-wrap; }
      <string>Use TEMP file</string>
     </property>
    </widget>
+   <widget class="QCheckBox" name="checkBoxNotifications">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>10</y>
+      <width>131</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Notifications</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -168,9 +181,11 @@ p, li { white-space: pre-wrap; }
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <tabstops>
+  <tabstop>checkBoxNotifications</tabstop>
   <tabstop>comboBoxCam</tabstop>
   <tabstop>buttonUpdateCam</tabstop>
   <tabstop>checkBoxCamBlock</tabstop>
+  <tabstop>checkBoxCamBuffer</tabstop>
   <tabstop>textServer</tabstop>
   <tabstop>spinBoxSampleRate</tabstop>
   <tabstop>buttonSend</tabstop>
