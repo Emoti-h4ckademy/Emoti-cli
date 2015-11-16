@@ -1,15 +1,29 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "network.h"
-#include <QDate>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     cam(),
     camMutex(),
-    sampleRate(MainWindow::SAMPLERATEDEFAULTs)
+    sampleRateSec(MainWindow::SAMPLERATEDEFAULTs),
+    lastSend(QDateTime::currentDateTime()),
+    sendMutex(),
+    sendTimer()
 {
+    this->username = qgetenv("USER");
+    if (this->username.isEmpty())
+    {
+        this->username = qgetenv("USERNAME");
+    }
+    if (this->username.isEmpty())
+    {
+        qDebug() << Q_FUNC_INFO << "Cannot get username from system";
+        this->username = "Emoti";
+    }
+
+
     this->ui->setupUi(this);
 
     //Camera
@@ -23,20 +37,26 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     //Send
-    this->connect(this->ui->buttonSend, SIGNAL(clicked(bool)), this, SLOT(getImageAndSend()));
-    this->ui->spinBoxSampleRate->setValue(this->sampleRate);
+    this->connect(this->ui->buttonSend, SIGNAL(clicked(bool)), this, SLOT(sendImage()));
+    this->ui->spinBoxSampleRate->setValue(this->sampleRateSec);
     this->ui->spinBoxSampleRate->setMaximum(MainWindow::SAMPLERATEMAXIMUMs);
     this->ui->spinBoxSampleRate->setMinimum(MainWindow::SAMPLERATEMINIMUMs);
     this->connect(this->ui->spinBoxSampleRate, SIGNAL(valueChanged(int)), this, SLOT(sampleRateChange()));
 
-
+    //Timer
+    this->sendTimer.setSingleShot(true);
+    this->connect(&this->sendTimer, SIGNAL(timeout()), this, SLOT(sendImage()));
+    this->sendTimer.start(this->sampleRateSec * 1000);
 
 
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
+    if (this->ui)
+    {
+        delete ui;
+    }
 }
 
 void MainWindow::cameraList_Setup()
@@ -92,29 +112,67 @@ void MainWindow::cameraChange()
     this->camMutex.unlock();
 }
 
-
-void MainWindow::getImageAndSend()
+void MainWindow::sendImage()
 {
-    QString name = qgetenv("USER");
-    if (name.isEmpty())
-        name = qgetenv("USERNAME");
+    this->getImageAndSend(true);
+}
 
+
+int MainWindow::getImageAndSend(bool ignoreRestriction)
+{
+    int neterror = 0;
+    QDateTime nextSend = this->lastSend.addSecs(this->sampleRateSec);
+    QDateTime actualTime = QDateTime::currentDateTime();
     std::shared_ptr<CamImage> img;
+    QString server = this->ui->textServer->toPlainText();
+    Network net (server);
+
+    if (!this->sendMutex.tryLock(MainWindow::TRYLOCKms))
+    {
+        qDebug() << Q_FUNC_INFO << "Already sending";
+        return 1;
+    }
+
+   if ((!ignoreRestriction) && (nextSend > actualTime))
+   {
+        qDebug() << Q_FUNC_INFO << "Too soon to send an image. Asked for: " << actualTime.toString() << ". Next configured: " << nextSend.toString();
+        neterror = 1;
+        goto setTimerandExit;
+   }
 
     img = cam.captureImageSync("png");
 
     if (img == nullptr)
     {
         qDebug() << Q_FUNC_INFO << "No image captured. Nothing is sent";
-        return;
+        neterror = 1;
+        goto setTimerandExit;
     }
 
-    QDateTime time = QDateTime::currentDateTime();
 
-    QString server = this->ui->textServer->toPlainText();
+    neterror = net.sendImage(img, this->username, actualTime.toString());
 
-    Network net(server);
-    net.sendImage(img, name, time.toString());
+
+setTimerandExit:
+    long unsigned int timeout;
+    if (!neterror)
+    {
+        this->lastSend = actualTime;
+        timeout = this->sampleRateSec * 1000;
+    }
+    else
+    {
+        timeout = nextSend.toMSecsSinceEpoch() - actualTime.toMSecsSinceEpoch();
+    }
+
+    this->sendTimer.stop();
+    qDebug() << Q_FUNC_INFO << "Next image will be send in (ms): " << timeout;
+    this->sendTimer.start(timeout);
+
+    sendMutex.unlock();
+    return neterror;
+
+
 }
 
 void MainWindow::sampleRateChange()
@@ -133,7 +191,9 @@ void MainWindow::sampleRateChange()
         newValue = MainWindow::SAMPLERATEMAXIMUMs;
     }
 
-    this->sampleRate = newValue;
+    this->sampleRateSec = newValue;
 
-    this->getImageAndSend();
+
+
+    this->getImageAndSend(false);
 }
