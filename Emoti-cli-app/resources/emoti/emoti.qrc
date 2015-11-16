@@ -1,9 +1,8 @@
 <RCC>
     <qresource prefix="/resources">
-        <file>main.qml</file>
-        <file>MainForm.ui.qml</file>
         <file>emoti-icon.png</file>
         <file>emoti-logo-small.png</file>
         <file>emoti-logo.png</file>
+        <file>emoti-logo-splash.png</file>
     </qresource>
 </RCC>

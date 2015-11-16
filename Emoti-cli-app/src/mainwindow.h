@@ -2,8 +2,11 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "ui_mainwindow.h"
+#include <QDate>
+#include <QTimer>
+#include <QSystemTrayIcon>
 
+#include "ui_mainwindow.h"
 #include "camera.h"
 
 namespace Ui {
@@ -19,17 +22,39 @@ public:
     ~MainWindow();
 
 private:
+    const int TRYLOCKms = 100;
+    const int SAMPLERATEDEFAULTs = 300;
+    const int SAMPLERATEMINIMUMs = 10;
+    const int SAMPLERATEMAXIMUMs = 3600;
+    const int SAMPLERATEFAILEDs = SAMPLERATEMINIMUMs;
 
     Ui_MainWindow *ui;
-
     Camera cam;
+    QMutex camMutex;
     QList<QCameraInfo> camList;
-    unsigned int camListPosition;
-    void cameraList_Setup();
+    QString username;
+
+    int sampleRateSec;
+    QDateTime lastSend;
+    QMutex sendMutex;
+    QTimer sendTimer;
+
+    QSystemTrayIcon* trayIcon;
+    QMenu* trayIconMenu;
+
+    bool notificationsActive;
+    const int NOTIFICATIONs = 5;
+
+    int getImageAndSend(bool ignoreRestriction);
+    int loadTray();
+
 
 public slots:
-    void cameraList_Change();
-    void getImageAndSend();
+    void cameraList_Setup();
+    void cameraChange();
+    void sendImage();
+    void sampleRateChange();
+    void notificationsChange();
 
 };
 
