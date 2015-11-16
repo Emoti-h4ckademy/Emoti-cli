@@ -7,19 +7,29 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     cam(),
-    camListPosition(0)
+    camMutex(),
+    sampleRate(MainWindow::SAMPLERATEDEFAULTs)
 {
     this->ui->setupUi(this);
 
     //Camera
     this->cameraList_Setup();
-    this->connect(this->ui->camListBox, SIGNAL(currentIndexChanged(int)), this, SLOT(cameraList_Change()));
 
-    //Button
+    this->connect(this->ui->comboBoxCam, SIGNAL(currentIndexChanged(int)), this, SLOT (cameraChange()));
+    this->connect(this->ui->checkBoxCamBlock, SIGNAL(clicked(bool)), this, SLOT (cameraChange()));
+    this->connect(this->ui->checkBoxCamBuffer, SIGNAL(clicked(bool)), this, SLOT (cameraChange()));
+
+    this->connect(this->ui->buttonUpdateCam, SIGNAL(released()), this, SLOT(cameraList_Setup()));
+
+
+    //Send
     this->connect(this->ui->buttonSend, SIGNAL(clicked(bool)), this, SLOT(getImageAndSend()));
+    this->ui->spinBoxSampleRate->setValue(this->sampleRate);
+    this->ui->spinBoxSampleRate->setMaximum(MainWindow::SAMPLERATEMAXIMUMs);
+    this->ui->spinBoxSampleRate->setMinimum(MainWindow::SAMPLERATEMINIMUMs);
+    this->connect(this->ui->spinBoxSampleRate, SIGNAL(valueChanged(int)), this, SLOT(sampleRateChange()));
 
-    //Text
-    this->ui->textServer->setText("Url servidor");
+
 
 
 }
@@ -31,34 +41,57 @@ MainWindow::~MainWindow()
 
 void MainWindow::cameraList_Setup()
 {
+    if (!this->camMutex.tryLock(MainWindow::TRYLOCKms))
+    {
+        qDebug() << Q_FUNC_INFO << "Already updating";
+        return;
+    }
+
+
+    this->ui->comboBoxCam->clear();
     this->camList = QCameraInfo::availableCameras();
 
-    for (QCameraInfo &cameraInfo : camList)
+    for (QCameraInfo &cameraInfo : this->camList)
     {
-        this->ui->camListBox->addItem(cameraInfo.description());
-        qDebug() << Q_FUNC_INFO << "Detected device: " << cameraInfo.deviceName();
+        this->ui->comboBoxCam->addItem(cameraInfo.description());
+        qDebug() << Q_FUNC_INFO << "Detected device: " << cameraInfo.deviceName() << "(" << cameraInfo.description() << ")";
     }
+
+    this->camMutex.unlock();
 
     if (!this->camList.isEmpty())
     {
-        this->cameraList_Change();
+        this->cameraChange();
     }
-
 }
 
-void MainWindow::cameraList_Change()
+void MainWindow::cameraChange()
 {
-    int ind = this->ui->camListBox->currentIndex();
+    if (!this->camMutex.tryLock(MainWindow::TRYLOCKms))
+    {
+        qDebug() << Q_FUNC_INFO << "Already updating";
+        return;
+    }
 
-    if (ind >= this->camList.size())
+    bool block = this->ui->checkBoxCamBlock->isChecked();
+    bool file = this->ui->checkBoxCamBuffer->isChecked();
+
+    int ind = this->ui->comboBoxCam->currentIndex();
+
+    if ((ind < 0) || (ind >= this->camList.size()))
     {
         qDebug() << Q_FUNC_INFO << "Invalid index";
         return;
     }
 
     QCameraInfo qi = this->camList.at(ind);
-    this->cam.setup(qi, Camera::DEVICE_FREE, Camera::DESTINATION_MEMORY); //TODO handle errors
+    this->cam.setup(qi,
+                    block ? Camera::DEVICE_LOCKED : Camera::DEVICE_FREE,
+                    file ? Camera::DESTINATION_FILE : Camera::DESTINATION_MEMORY); //TODO handle errors
+
+    this->camMutex.unlock();
 }
+
 
 void MainWindow::getImageAndSend()
 {
@@ -82,4 +115,25 @@ void MainWindow::getImageAndSend()
 
     Network net(server);
     net.sendImage(img, name, time.toString());
+}
+
+void MainWindow::sampleRateChange()
+{
+    int newValue = this->ui->spinBoxSampleRate->value();
+
+    if (newValue < MainWindow::SAMPLERATEMINIMUMs)
+    {
+        qDebug() << Q_FUNC_INFO << "Sample rate too low: " << newValue << ". Expected > " << MainWindow::SAMPLERATEMINIMUMs;
+        newValue = MainWindow::SAMPLERATEMINIMUMs;
+    }
+
+    if (newValue > MainWindow::SAMPLERATEMAXIMUMs)
+    {
+        qDebug() << Q_FUNC_INFO << "Sample rate too high: " << newValue << ". Expected < " << MainWindow::SAMPLERATEMAXIMUMs;
+        newValue = MainWindow::SAMPLERATEMAXIMUMs;
+    }
+
+    this->sampleRate = newValue;
+
+    this->getImageAndSend();
 }

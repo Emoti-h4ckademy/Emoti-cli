@@ -30,6 +30,12 @@ Camera::~Camera()
 
 int Camera::setup(QCameraInfo& _device, lockStatus _deviceLocked, imageDestination _tempDestination)
 {
+    if (!this->camMutex.tryLock())
+    {
+        qDebug() << Q_FUNC_INFO << "Camera is busy";
+        return 1;
+    }
+
 #ifndef QT_NO_DEBUG_OUTPUT
     qDebug() << Q_FUNC_INFO << "Setting up device: " << _device.deviceName() << "(" << _device.description() << "), "
              << (_deviceLocked == DEVICE_LOCKED ? "LOCKED":"FREE")
@@ -37,7 +43,11 @@ int Camera::setup(QCameraInfo& _device, lockStatus _deviceLocked, imageDestinati
 #endif
 
     //setDevice already starts the camera
-    return (this->setDevice(_device, _tempDestination) || this->setDeviceMode(_deviceLocked));
+    bool result =  (this->setDevice(_device, _tempDestination) || this->setDeviceMode(_deviceLocked));
+
+    this->camMutex.unlock();
+
+    return result;
 }
 
 
@@ -200,7 +210,7 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
 {
     if (!this->camMutex.tryLock())
     {
-        qDebug() << Q_FUNC_INFO << "Already capturing an image";
+        qDebug() << Q_FUNC_INFO << "Camera is busy";
         return nullptr;
     }
 

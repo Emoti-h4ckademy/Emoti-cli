@@ -3,5 +3,6 @@
         <file>emoti-icon.png</file>
         <file>emoti-logo-small.png</file>
         <file>emoti-logo.png</file>
+        <file>emoti-logo-splash.png</file>
     </qresource>
 </RCC>

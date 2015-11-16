@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += widgets network multimedia
+QT += widgets network multimedia qml quick
 QMAKE_CXXFLAGS += -Wall -Wextra
 CONFIG += c++11
 
@@ -15,7 +15,8 @@ SOURCES += src/main.cpp \
     src/camimage.cpp \
     src/mainwindow.cpp
 
-RESOURCES +=
+RESOURCES += \
+    resources/emoti/emoti.qrc
 
 CONFIG(release, debug|release) {
     #This is a release build
@@ -32,3 +33,5 @@ include(resources/deployment.pri)
 
 FORMS += \
     src/mainwindow.ui
+
+DISTFILES +=

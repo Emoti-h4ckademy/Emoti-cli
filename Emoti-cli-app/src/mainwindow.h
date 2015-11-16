@@ -2,8 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "ui_mainwindow.h"
 
+#include "ui_mainwindow.h"
 #include "camera.h"
 
 namespace Ui {
@@ -19,17 +19,23 @@ public:
     ~MainWindow();
 
 private:
+    const int TRYLOCKms = 100;
+    const int SAMPLERATEDEFAULTs = 300;
+    const int SAMPLERATEMINIMUMs = 10;
+    const int SAMPLERATEMAXIMUMs = 3600;
 
     Ui_MainWindow *ui;
-
     Camera cam;
+    QMutex camMutex;
     QList<QCameraInfo> camList;
-    unsigned int camListPosition;
-    void cameraList_Setup();
+    int sampleRate;
+
 
 public slots:
-    void cameraList_Change();
+    void cameraList_Setup();
+    void cameraChange();
     void getImageAndSend();
+    void sampleRateChange();
 
 };
 
