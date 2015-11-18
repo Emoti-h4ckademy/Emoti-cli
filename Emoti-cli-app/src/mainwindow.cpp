@@ -38,6 +38,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->connect(this->ui->buttonUpdateCam, SIGNAL(released()), this, SLOT(cameraList_Setup()));
 
+    //Server:
+    this->ui->textServer->setText("http://localhost:3000/api/images");
+
 
     //Send
     this->connect(this->ui->buttonSend, SIGNAL(clicked(bool)), this, SLOT(sendImage()));
@@ -166,7 +169,7 @@ void MainWindow::sendImage()
 
 int MainWindow::getImageAndSend(bool ignoreRestriction)
 {
-    int neterror = 0;
+    bool responseOK = false;
     QDateTime nextSend = this->lastSend.addSecs(this->sampleRateSec);
     QDateTime actualTime = QDateTime::currentDateTime();
     std::shared_ptr<CamImage> img;
@@ -182,7 +185,7 @@ int MainWindow::getImageAndSend(bool ignoreRestriction)
    if ((!ignoreRestriction) && (nextSend > actualTime))
    {
         qDebug() << Q_FUNC_INFO << "Too soon to send an image. Asked for: " << actualTime.toString() << ". Next configured: " << nextSend.toString();
-        neterror = 1;
+        responseOK = false;
         goto setTimerandExit;
    }
 
@@ -191,13 +194,13 @@ int MainWindow::getImageAndSend(bool ignoreRestriction)
     if (img == nullptr)
     {
         qDebug() << Q_FUNC_INFO << "No image captured. Nothing is sent";
-        neterror = 1;
+        responseOK = false;
         goto setTimerandExit;
     }
 
 
-    neterror = net.sendImage(img, this->username, actualTime.toString());
-    if ((!neterror) && (this->notificationsActive))
+    responseOK = net.sendImage(img, this->username, actualTime.toString());
+    if ((!responseOK) && (this->notificationsActive))
     {
         this->trayIcon->showMessage("Emoti", "There was an error sending the last image");
     }
@@ -205,7 +208,7 @@ int MainWindow::getImageAndSend(bool ignoreRestriction)
 
 setTimerandExit:
     long unsigned int timeout;
-    if (!neterror)
+    if (responseOK)
     {
         this->lastSend = actualTime;
         timeout = this->sampleRateSec * 1000;
@@ -220,7 +223,7 @@ setTimerandExit:
     this->sendTimer.start(timeout);
 
     sendMutex.unlock();
-    return neterror;
+    return (responseOK ? 0 : 1);
 
 
 }
