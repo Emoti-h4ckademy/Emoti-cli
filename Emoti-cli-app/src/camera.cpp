@@ -216,7 +216,7 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
     }
 
     //Try to start the camera (if needed)
-    if (!this->start(false))
+    if (this->start(false) != 0)
     {
         qDebug() << Q_FUNC_INFO << "Not ready for capture";
 
@@ -241,12 +241,12 @@ int Camera::start(bool _firstTime)
     if (_firstTime)
     {
         //Firsttime && Device locked
-        if (this->deviceLocked == DEVICE_LOCKED) return this->startSync();
+        if (this->deviceLocked == DEVICE_LOCKED) return (this->startSync() ? 0 : 1);
     }
     else
     {
         //No firsttime && Device free
-        if (this->deviceLocked == DEVICE_FREE) return this->startSync();
+        if (this->deviceLocked == DEVICE_FREE) return (this->startSync() ? 0 : 1);
     }
 
     //The other two options (first time and device free, no first time and device locked)
