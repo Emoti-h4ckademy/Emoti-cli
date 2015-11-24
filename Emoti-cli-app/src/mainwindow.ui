@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Emoti - Preferences</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../resources/emoti/emoti.qrc">
+    <normaloff>:/resources/emoti-icon.png</normaloff>:/resources/emoti-icon.png</iconset>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QComboBox" name="comboBoxCam">
     <property name="geometry">
@@ -190,6 +194,8 @@ p, li { white-space: pre-wrap; }
   <tabstop>spinBoxSampleRate</tabstop>
   <tabstop>buttonSend</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="../resources/emoti/emoti.qrc"/>
+ </resources>
  <connections/>
 </ui>
