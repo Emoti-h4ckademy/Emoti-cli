@@ -71,6 +71,7 @@ private:
     lockStatus deviceLocked;
     QBasicMutex camMutex;
     imageDestination camDestination;
+    const int TIMEOUTs = 6;
 
     //Template to use in the temp file
     const QString fTemplate;

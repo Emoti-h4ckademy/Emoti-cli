@@ -26,10 +26,11 @@ private:
     const int SAMPLERATEDEFAULTs = 300;
     const int SAMPLERATEMINIMUMs = 10;
     const int SAMPLERATEMAXIMUMs = 3600;
-    const int SAMPLERATEFAILEDs = SAMPLERATEMINIMUMs;
+    const int SAMPLERATEFAILEDs = 20;
 
     Ui_MainWindow *ui;
     Camera cam;
+    bool camReady;
     QMutex camMutex;
     QList<QCameraInfo> camList;
     QString username;
