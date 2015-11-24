@@ -53,7 +53,6 @@ MainWindow::MainWindow(QWidget *parent) :
     //Timer
     this->sendTimer.setSingleShot(true);
     this->connect(&this->sendTimer, SIGNAL(timeout()), this, SLOT(sendImage()));
-    this->sendTimer.start(this->sampleRateSec * 1000);
 
     //Tray
     this->trayIcon->setContextMenu(this->trayIconMenu);
@@ -129,7 +128,7 @@ void MainWindow::cameraList_Setup()
 
     this->camMutex.unlock();
 
-    if (!this->camList.isEmpty())
+    if ((!this->camReady) && (!this->camList.isEmpty()))
     {
         this->cameraChange();      
     }
@@ -155,11 +154,15 @@ void MainWindow::cameraChange()
     }
 
     QCameraInfo qi = this->camList.at(ind);
+    this->sendTimer.stop();
+
     if (!this->cam.setup(qi,
                     block ? Camera::DEVICE_LOCKED : Camera::DEVICE_FREE,
                     file ? Camera::DESTINATION_FILE : Camera::DESTINATION_MEMORY))
     {
         this->camReady = true;
+        qDebug() << Q_FUNC_INFO << "Next image will be sent in (ms): " << this->sampleRateSec * 1000;
+        this->sendTimer.start(this->sampleRateSec * 1000);
     } else {
         this->camReady = false;
         this->trayIcon->showMessage("Emoti", "Could not start the camera");
@@ -194,7 +197,7 @@ int MainWindow::getImageAndSend(bool ignoreRestriction)
    if ((!ignoreRestriction) && (nextSend > actualTime))
    {
         qDebug() << Q_FUNC_INFO << "Too soon to send an image. Asked for: " << actualTime.toString() << ". Next configured: " << nextSend.toString();
-        responseOK = false;
+        responseOK = true;
         goto setTimerandExit;
    }
 
@@ -203,8 +206,10 @@ int MainWindow::getImageAndSend(bool ignoreRestriction)
     if (img == nullptr)
     {
         qDebug() << Q_FUNC_INFO << "No image captured. Nothing is sent";
+        this->trayIcon->showMessage("Emoti", "There seems to be a problem with the camera. Please check the select camera");
         responseOK = false;
-        goto setTimerandExit;
+        this->camReady = false;
+        goto exitWithoutTimer;
     }
 
 
@@ -224,13 +229,14 @@ setTimerandExit:
     }
     else
     {
-        timeout = MainWindow::SAMPLERATEFAILEDs * 1000;
+        timeout = (MainWindow::SAMPLERATEFAILEDs < this->sampleRateSec ? MainWindow::SAMPLERATEFAILEDs : this->sampleRateSec ) * 1000;
     }
 
     this->sendTimer.stop();
-    qDebug() << Q_FUNC_INFO << "Next image will be send in (ms): " << timeout;
+    qDebug() << Q_FUNC_INFO << "Next image will be sent in (ms): " << timeout;
     this->sendTimer.start(timeout);
 
+exitWithoutTimer:
     sendMutex.unlock();
     return (responseOK ? 0 : 1);
 
