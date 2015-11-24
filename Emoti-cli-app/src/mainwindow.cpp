@@ -6,6 +6,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     cam(),
+    camReady(false),
     camMutex(),
     sampleRateSec(MainWindow::SAMPLERATEDEFAULTs),
     lastSend(QDateTime::currentDateTime()),
@@ -130,7 +131,7 @@ void MainWindow::cameraList_Setup()
 
     if (!this->camList.isEmpty())
     {
-        this->cameraChange();
+        this->cameraChange();      
     }
 }
 
@@ -154,16 +155,24 @@ void MainWindow::cameraChange()
     }
 
     QCameraInfo qi = this->camList.at(ind);
-    this->cam.setup(qi,
+    if (!this->cam.setup(qi,
                     block ? Camera::DEVICE_LOCKED : Camera::DEVICE_FREE,
-                    file ? Camera::DESTINATION_FILE : Camera::DESTINATION_MEMORY); //TODO handle errors
+                    file ? Camera::DESTINATION_FILE : Camera::DESTINATION_MEMORY))
+    {
+        this->camReady = true;
+    } else {
+        this->camReady = false;
+        this->trayIcon->showMessage("Emoti", "Could not start the camera");
+    }
 
     this->camMutex.unlock();
 }
 
 void MainWindow::sendImage()
 {
-    this->getImageAndSend(true);
+    if (this->camReady) {
+        this->getImageAndSend(true);
+    }
 }
 
 

@@ -30,6 +30,7 @@ private:
 
     Ui_MainWindow *ui;
     Camera cam;
+    bool camReady;
     QMutex camMutex;
     QList<QCameraInfo> camList;
     QString username;
