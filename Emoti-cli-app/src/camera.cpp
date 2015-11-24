@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QTemporaryFile>
+#include <QTimer>
 
 Camera::Camera()
     :cam(nullptr),
@@ -215,9 +216,10 @@ std::shared_ptr<CamImage> Camera::captureImageSync(const char *_format)
     }
 
     //Try to start the camera (if needed)
-    if (this->start(false) && (!this->camImageCapture->isReadyForCapture()))
+    if (!this->start(false))
     {
-        qDebug() << Q_FUNC_INFO << "Not ready for capture --- Camera state" << this->cam->state();
+        qDebug() << Q_FUNC_INFO << "Not ready for capture";
+
         this->camMutex.unlock();
         return nullptr;
     }
@@ -289,8 +291,11 @@ bool Camera::startSync()
     std::vector <QMetaObject::Connection> myEvents;
     myEvents.push_back(holder.connect(this->camImageCapture, &QCameraImageCapture::readyForCaptureChanged,
                                       &eventLoop, &QEventLoop::quit));
-    myEvents.push_back(holder.connect(this->cam.get(), SIGNAL(error(QCamera::Error)),
+    myEvents.push_back(holder.connect(this->camImageCapture, SIGNAL(error(int,QCameraImageCapture::Error,QString)),
                                       &eventLoop, SLOT(quit())));
+    QTimer timer;
+    myEvents.push_back(holder.connect(&timer, SIGNAL(timeout()),&eventLoop, SLOT(quit())));
+    timer.start(this->TIMEOUTs * 1000);
 
     //Capture
     this->cam->start();
@@ -302,12 +307,12 @@ bool Camera::startSync()
         holder.disconnect(it);
     }
 
-    if (this->cam->error() != QCamera::NoError)
+
+    if (!this->camImageCapture->isReadyForCapture())
     {
-        qDebug() << Q_FUNC_INFO << this->cam->errorString();
+        qDebug() << Q_FUNC_INFO << "COULD NOT START WEBCAM: " + this->cam->errorString();
         return false;
     }
 
-    qDebug() << Q_FUNC_INFO << "Exit. Camera ready = " << this->camImageCapture->isReadyForCapture();
-    return !this->camImageCapture->isReadyForCapture();
+    return true;
 }
